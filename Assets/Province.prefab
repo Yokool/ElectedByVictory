@@ -123,4 +123,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1908a16cfe0b051459af25424a0c60ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  seedVertexCount: 20
+  seedVertexCount: 101

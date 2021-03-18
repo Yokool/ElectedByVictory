@@ -55,25 +55,28 @@
     <Analyzer Include="C:\Program Files (x86)\Microsoft Visual Studio Tools for Unity\16.0\Analyzers\Microsoft.Unity.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\UnitTests\ConcreteTests\LineT.cs" />
     <Compile Include="Assets\UnitTests\IUnitTestBundle.cs" />
+    <Compile Include="Assets\UnitTests\ConcreteTests\LineSegmentT.cs" />
     <Compile Include="Assets\UnitTests\UnitTestWrapper.cs" />
     <Compile Include="Assets\UnitTests\NameProviderCollection.cs" />
+    <Compile Include="Assets\MathEBV.cs" />
     <Compile Include="Assets\UnitTests\TestedClassNameProvider.cs" />
     <Compile Include="Assets\UnitTests\IUnitTestMethod.cs" />
     <Compile Include="Assets\UnitTests\TestedClassMethodNameProvider.cs" />
     <Compile Include="Assets\UnitTests\UnitTestMethod.cs" />
+    <Compile Include="Assets\LineUtilities.cs" />
     <Compile Include="Assets\UnitTests\ConcreteTests\PointUtilitiesT.cs" />
     <Compile Include="Assets\UnitTests\TestNameFactory.cs" />
     <Compile Include="Assets\Line.cs" />
     <Compile Include="Assets\WorldCreator.cs" />
     <Compile Include="Assets\UnitTests\TestClass.cs" />
     <Compile Include="Assets\VoronoiSeedProvinceInit.cs" />
+    <Compile Include="Assets\PointUtilities.cs" />
+    <Compile Include="Assets\LineSegment.cs" />
     <Compile Include="Assets\UnitTests\IUnitTestNameProvider.cs" />
     <Compile Include="Assets\UnitTests\CallingTestClassNameProvider.cs" />
-    <Compile Include="Assets\MathEBV.cs" />
-    <Compile Include="Assets\PointUtilities.cs" />
-    <Compile Include="Assets\LineUtilities.cs" />
-    <Compile Include="Assets\LineSegment.cs" />
+    <Compile Include="Assets\TransformationUtilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

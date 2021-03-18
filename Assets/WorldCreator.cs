@@ -66,6 +66,8 @@ namespace ElectedByVictory.WorldCreation
 
             VoronoiSeed[] otherSeeds = allSeeds.Where( (iteratedSeed) => { return iteratedSeed != seed; } ).ToArray();
 
+            //^^EVERYTHING ABOVE WORKS
+            
             provinceInit.ClampVerticesToVoronoi(otherSeeds);
 
             return provinceInit;
@@ -214,8 +216,8 @@ namespace ElectedByVictory.WorldCreation
 
         public Vector2 GetPointAtAngleRad(float angle)
         {
-            float angleX = GetX() + GetRadius() * Mathf.Cos(angle);
-            float angleY = GetY() + GetRadius() * Mathf.Sin(angle);
+            float angleX = GetX() + (GetRadius() * Mathf.Cos(angle));
+            float angleY = GetY() + (GetRadius() * Mathf.Sin(angle));
 
             return new Vector2(angleX, angleY);
         }
