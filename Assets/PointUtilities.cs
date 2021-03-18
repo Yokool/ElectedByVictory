@@ -19,10 +19,10 @@ public static class PointUtilities
         float p_x = pointToClamp.x;
         float p_y = pointToClamp.y;
 
-        Line originToPoint = new Line(o_x, o_y, p_x, p_y);
+        LineSegment originToPoint = new LineSegment(o_x, o_y, p_x, p_y);
 
 
-        Vector2? intersection = originToPoint.GetIntersectionWith(clampingLine);
+        Vector2? intersection = originToPoint.GetIntersectionWithLine(clampingLine);
         /*
         Debug.Log("?????: " + intersection);
 
@@ -35,7 +35,7 @@ public static class PointUtilities
         {
             return pointToClamp;
         }
-
+        /*
         float distanceToPoint = PointUtilities.PointDistance(origin, pointToClamp);
 
         float distanceToClampedPoint = PointUtilities.PointDistance(origin, intersection.Value);
@@ -48,6 +48,13 @@ public static class PointUtilities
         {
             return intersection.Value;
         }
-
+        */
+        return intersection.Value;
     }
+
+    public static bool IsPointInClosedInterval(Vector2 point, float xMin, float xMax, float yMin, float yMax)
+    {
+        return (MathEBV.IsValueInClosedInterval(point.x, xMin, xMax) && MathEBV.IsValueInClosedInterval(point.y, yMin, yMax));
+    }
+
 }

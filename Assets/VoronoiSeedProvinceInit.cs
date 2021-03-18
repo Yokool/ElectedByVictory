@@ -68,7 +68,7 @@ namespace ElectedByVictory.WorldCreation
             gameObject.transform.position = provincePosition;
         }
 
-        private Vector3[] CreateCircleVertices(VoronoiSeed seed)
+        private Vector3[] CreateCircleWorldVertices(VoronoiSeed seed)
         {
             Circle circleSeed = seed.GetCircle();
 
@@ -85,7 +85,9 @@ namespace ElectedByVictory.WorldCreation
                 float currentAngle = i * step;
                 Vector2 point = circleSeed.GetPointAtAngleDegrees(currentAngle);
 
-                circleVertices[i] = new Vector3(point.x, point.y, z);
+                Vector2 worldSpacePoint = new Vector3(point.x, point.y, z);
+
+                circleVertices[i] = worldSpacePoint;
             }
 
             return circleVertices;
@@ -140,37 +142,33 @@ namespace ElectedByVictory.WorldCreation
             provinceMeshFilter.mesh = mesh;
         }
 
-        public void CreateMeshFromSeed(WorldCreator worldCreator, VoronoiSeed seed)
+        private Vector2[] CreateMeshUVs(Vector3[] localSpaceMeshVertices)
         {
-            Vector3[] circleVertices = CreateCircleVertices(seed);
-
-            Vector3[] meshVertices = CreateMeshVertices(circleVertices);
-
-            Vector2[] uvs = new Vector2[meshVertices.Length];
+            Vector2[] uvs = new Vector2[localSpaceMeshVertices.Length];
 
             float maxX = -float.MaxValue;
             float maxY = -float.MaxValue;
 
-            for(int i = 0; i < meshVertices.Length; ++i)
+            for (int i = 0; i < localSpaceMeshVertices.Length; ++i)
             {
-                Vector3 vertex = meshVertices[i];
+                Vector3 vertex = localSpaceMeshVertices[i];
                 float vertex_x = vertex.x;
                 float vertex_y = vertex.y;
 
-                if(vertex_x > maxX)
+                if (vertex_x > maxX)
                 {
                     maxX = vertex_x;
                 }
 
-                if(vertex_y > maxY)
+                if (vertex_y > maxY)
                 {
                     maxY = vertex_y;
                 }
             }
 
-            for(int i = 0; i < uvs.Length; ++i)
+            for (int i = 0; i < uvs.Length; ++i)
             {
-                Vector3 uvVertex = meshVertices[i];
+                Vector3 uvVertex = localSpaceMeshVertices[i];
                 float relativeX = uvVertex.x / maxX;
                 float relativeY = uvVertex.y / maxY;
 
@@ -178,9 +176,14 @@ namespace ElectedByVictory.WorldCreation
                 uvs[i] = uv;
             }
 
-            int triangleNumber = meshVertices.Length - 1;
+            return uvs;
+        }
+
+        private int[] CreateMeshTriangles(Vector3[] localSpaceMeshVertices)
+        {
+            int triangleNumber = localSpaceMeshVertices.Length - 1;
             int[] triangles = new int[triangleNumber * 3];
-            
+
             //Unity does triangles order matter
 
             // THE MESHES ARE VISIBLE FROM THE OTHER SIDE!
@@ -194,7 +197,7 @@ namespace ElectedByVictory.WorldCreation
              *
              */
             int header = 1;
-            for(int i = 0; i < triangles.Length; i += 3)
+            for (int i = 0; i < triangles.Length; i += 3)
             {
                 triangles[i] = 0;
                 triangles[i + 1] = header + 1;
@@ -207,9 +210,22 @@ namespace ElectedByVictory.WorldCreation
             triangles[triangles.Length - 2] = 1;
             triangles[triangles.Length - 1] = header - 1;
 
-            SetMeshFilter(meshVertices, uvs, triangles);
+            return triangles;
 
-            SetupColliderComponent(circleVertices);
+        }
+
+        public void CreateMeshFromSeed(WorldCreator worldCreator, VoronoiSeed seed)
+        {
+            Vector3[] circleWorldVertices = CreateCircleWorldVertices(seed);
+            Vector3[] localSpaceMeshVertices = transform.InverseTransformPoints(circleWorldVertices);
+            Vector2[] uvs = CreateMeshUVs(localSpaceMeshVertices);
+            int[] triangles = CreateMeshTriangles(localSpaceMeshVertices);
+
+            
+
+            SetMeshFilter(localSpaceMeshVertices, uvs, triangles);
+
+            SetupColliderComponent(localSpaceMeshVertices);
 
         }
 
@@ -218,26 +234,29 @@ namespace ElectedByVictory.WorldCreation
             Line[] clampingLines = GetClampingLines(otherSeeds);
 
             Mesh provinceMesh = provinceMeshFilter.mesh;
-            Vector3[] vertices = provinceMesh.vertices;
+            Vector3[] worldSpaceVertices = transform.TransformPoints(provinceMesh.vertices);
 
             Vector2 origin = gameObject.transform.position;
 
             // TODO: REPLACE WITH A .SELECT() METHOD
-            for(int i = 0; i < vertices.Length; ++i)
+            for(int i = 0; i < worldSpaceVertices.Length; ++i)
             {
-                Vector3 vertex = vertices[i];
+                Vector3 worldSpaceVertex = worldSpaceVertices[i];
 
                 for(int j = 0; j < clampingLines.Length; ++j)
                 {
                     Line clampingLine = clampingLines[j];
 
-                    vertex = PointUtilities.ClampPointToLine(origin, vertex, clampingLine);
+                    // TODO: FIX THE FUCKERY IN HERE
+                    // TODO: YOU NEED TO TRANSFORMPOINT AND TRANSFORM INVERSE THIS BITCH
+                    // TODO: BE MINDFUL IN WHAT COORDINATE SYSTEM ARE YOU WORKING
+                    worldSpaceVertex = PointUtilities.ClampPointToLine(origin, worldSpaceVertex, clampingLine);
                 }
 
-                vertices[i] = vertex;
+                worldSpaceVertices[i] = worldSpaceVertex;
             }
 
-            provinceMesh.vertices = vertices;
+            provinceMesh.vertices = transform.InverseTransformPoints(worldSpaceVertices);
 
         }
 
@@ -262,30 +281,59 @@ namespace ElectedByVictory.WorldCreation
             return lineFromOriginToVertices;
         }
 
+        List<Vector3> clampingLinesGizmos = new List<Vector3>();
+        /*
+        private void OnDrawGizmos()
+        {
+            Gizmos.DrawSphere(transform.position, 2f);
+
+            MeshFilter mf = GetComponent<MeshFilter>();
+            Vector3[] vert = mf.mesh.vertices;
+            for (int i = 0; i < vert.Length; ++i)
+            {
+                Gizmos.DrawSphere(transform.TransformPoint(vert[i]), 1f);
+            }
+
+        }
+        */
+        /// <summary>
+        /// I'm 90% sure this works.
+        /// </summary>
+        /// <param name="otherSeeds"></param>
+        /// <returns></returns>
         public Line[] GetClampingLines(VoronoiSeed[] otherSeeds)
         {
-            // We're not creating a perpendicular line for this seed
             Line[] perpendicularLines = new Line[otherSeeds.Length];
 
             for (int i = 0; i < otherSeeds.Length; ++i)
             {
                 VoronoiSeed seed = otherSeeds[i];
 
-                Vector2 pos = gameObject.transform.position;
+                Vector2 worldOriginPos = gameObject.transform.position;
 
-                // This x and y
-                float t_x = pos.x;
-                float t_y = pos.y;
+                float originX = worldOriginPos.x;
+                float originY = worldOriginPos.y;
 
-                // Seed x and y
-                float s_x = seed.GetX();
-                float s_y = seed.GetY();
+                float seedCenterX = seed.GetX();
+                float seedCenterY = seed.GetY();
 
                 // A line segment starting at the center of this obj and ending at the center of the other seed.
-                LineSegment fromThisSeedToOther = new LineSegment(t_x, t_y, s_x, s_y);
+                LineSegment thisCenterToSeedCenterLine = new LineSegment(originX, originY, seedCenterX, seedCenterY);
+
+                clampingLinesGizmos.Add(new Vector3(originX, originY));
+                clampingLinesGizmos.Add(new Vector3(seedCenterX, seedCenterY));
+
+                //Debug.Log(originX);
+                //Debug.Log(originY);
+
+                /*
+                Debug.Log(thisCenterToSeedCenterLine);
+                Debug.Log($"t_x: {originX} t_y: {originY} s_x: {seedCenterX} s_y: {seedCenterY}");
+                Debug.Log(thisCenterToSeedCenterLine.GetPointAt(0.5f));
+                */
 
                 // Get a line perpendicular to this line, going through a point half through this line segment.
-                perpendicularLines[i] = fromThisSeedToOther.GetLinePerpendicularAtWay(0.5f);
+                perpendicularLines[i] = thisCenterToSeedCenterLine.GetLinePerpendicularAtWay(0.5f);
 
             }
             return perpendicularLines;

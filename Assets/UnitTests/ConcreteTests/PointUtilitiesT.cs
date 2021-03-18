@@ -30,8 +30,6 @@ public class PointUtilitiesT : MonoBehaviour, IUnitTestBundle
         Line clampingLine = ls.GetLinePerpendicularAtWay(0.5f);
 
         p2 = PointUtilities.ClampPointToLine(p1, p2, clampingLine);
-        
-        Debug.Log(p2);
 
         return MathEBV.PointsEqual(p2, expectedValue);
     }

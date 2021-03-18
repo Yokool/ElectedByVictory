@@ -1,7 +1,56 @@
 ﻿using System;
 using UnityEngine;
 
-public class Line
+
+public interface IHasSlope
+{
+    float? GetSlope();
+    void SetSlope(float? m);
+    void SetSlope(float x1, float y1, float x2, float y2);
+
+    float? GetPerpendicularSlope();
+
+    bool IsVertical();
+}
+
+public interface IHasYIntercept
+{
+    float GetYIntercept();
+    void SetYIntercept(float b);
+    void SetYIntercept(float x, float y);
+
+    bool IsHorizontal();
+}
+
+public interface IHasSlopeAndYIntercept : IHasSlope, IHasYIntercept
+{
+    void SetLineValues(float? m, float b);
+    void SetLineValuesFromPoints(float x1, float y1, float x2, float y2);
+}
+
+public interface ILineLegality
+{
+    bool IsLegal();
+    void SetIsLegal(bool isLegal);
+}
+
+public interface IGetLineValuesAtPoint
+{
+    float? GetYAt(float x);
+    float? GetXAt(float y);
+}
+
+public interface ICanIntersectLine
+{
+    Vector2? GetIntersectionWithLine(Line line);
+}
+
+public interface ICanIntersectLineSegment
+{
+    Vector2? GetIntersectionWithLineSegment(LineSegment lineSegment);
+}
+
+public sealed class Line : IHasSlopeAndYIntercept, ILineLegality, IGetLineValuesAtPoint, ICanIntersectLine
 {
     /// <summary>
     /// Contains the slope of the line,
@@ -20,7 +69,7 @@ public class Line
         string slopeString = slope.HasValue ? Convert.ToString(slope.Value) : "undefined";
 
         string returnValue = $"LINE: m = {{{slopeString}}} b = {{{GetYIntercept()}}}";
-
+        
         return returnValue;
     }
 
@@ -32,6 +81,27 @@ public class Line
     public Line(float? m, float b)
     {
         SetLineValues(m, b);
+    }
+
+    /// <summary>
+    /// Sets the y intercept of this line without changing the slope of this line
+    /// to assure that the line will travel through a point (x, y)
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    public void SetTravelThrough(float x, float y)
+    {
+
+        float? slope = GetSlope();
+        if (!slope.HasValue)
+        {
+            SetYIntercept(x);
+            return;
+        }
+
+        // b = y - mx
+        float b = y - GetSlope().Value * x;
+        SetYIntercept(b);
     }
 
     public float? GetYAt(float x)
@@ -47,7 +117,7 @@ public class Line
         return slope.Value * x + GetYIntercept();
     }
 
-    public float GetXAt(float y)
+    public float? GetXAt(float y)
     {
         float? slope = GetSlope();
 
@@ -170,7 +240,7 @@ public class Line
         this.b = b;
     }
 
-    public Vector2? GetIntersectionWith(Line line)
+    public Vector2? GetIntersectionWithLine(Line line)
     {
 
         // y1 = m1x + b1
