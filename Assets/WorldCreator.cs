@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using ElectedByVictory.WorldCreation;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -8,7 +9,7 @@ namespace ElectedByVictory.WorldCreation
     public class WorldCreator : MonoBehaviour
     {
         [SerializeField]
-        private GameObject p_Province;
+        private GameObject pSeedPrefab;
 
         [SerializeField]
         private int numberOfProvinces;
@@ -21,6 +22,11 @@ namespace ElectedByVictory.WorldCreation
         [SerializeField]
         private int seedRadius;
 
+        private CornerData cornerData;
+       
+
+        private List<FullVoronoiSeed> activeSeeds = new List<FullVoronoiSeed>();
+
         /// <summary>
         /// Move to some manager.
         /// </summary>
@@ -29,202 +35,212 @@ namespace ElectedByVictory.WorldCreation
             CreateWorld();
         }
 
-        public void CreateWorld()
+        private void SetupCorners()
         {
-            VoronoiSeed[] seeds = GenerateSeeds();
-            GameObject[] provinces = CreateProvincesFromSeeds(seeds);
-
+            CornerData cornerData = new CornerData();
+            cornerData.SetupCornersFromSquare(GetWorldCenter(), GetWorldWidth(), GetWorldHeight());
+            SetCornerData(cornerData);
         }
 
-        private GameObject[] CreateProvincesFromSeeds(VoronoiSeed[] seeds)
+        public VoronoiSeedData[] ExtractActiveSeedData()
+        {
+            List<FullVoronoiSeed> activeSeeds = GetActiveSeeds();
+            
+            VoronoiSeedData[] extractedData = new VoronoiSeedData[activeSeeds.Count];
+
+            for(int i = 0; i < activeSeeds.Count; ++i)
+            {
+                FullVoronoiSeed activeSeed = activeSeeds[i];
+                VoronoiSeedData seedData = activeSeed.GetVoronoiSeedData();
+
+                extractedData[i] = seedData;
+            }
+            
+            return extractedData;
+        }
+
+        public void UpdateAllSeedsAndTheirMesh()
+        {
+            InternalUpdateMethod( (seed, dataDeepCopy) => { seed.UpdateSharedVoronoiWorldDataUpdate(dataDeepCopy); } );
+        }
+
+        public void UpdateAllSeedsOnlyData()
+        {
+            InternalUpdateMethod((seed, dataDeepCopy) => { seed.UpdateSharedVoronoiWorldDataNonUpdate(dataDeepCopy); });
+        }
+
+        private void InternalUpdateMethod(FullSeedUpdateMethod internalUpdateMethod)
+        {
+            VoronoiSeedData[] extractedData = ExtractActiveSeedData();
+            SharedVoronoiWorldData sharedData = new SharedVoronoiWorldData(extractedData, GetCornerData());
+
+            List<FullVoronoiSeed> seeds = GetActiveSeeds();
+            for (int i = 0; i < seeds.Count; ++i)
+            {
+                FullVoronoiSeed seed = seeds[i];
+                SharedVoronoiWorldData dataDeepCopy = new SharedVoronoiWorldData(sharedData);
+                internalUpdateMethod.Invoke(seed, dataDeepCopy);
+            }
+        }
+
+        
+
+        public void CreateWorld()
+        {
+            SetupCorners();
+            GenerateFullRandomVoronoiSeeds();
+            FullVoronoiSeed[] fullVoronoiSeeds = GenerateFullRandomVoronoiSeeds();
+            AddSeedRangeUpdate(fullVoronoiSeeds);
+            InstantiateMeshObjectsForAllSeeds();
+            
+            //GameObject[] provinces = CreateProvincesFromSeeds(seeds);
+        }
+
+        private void InstantiateMeshObjectsForAllSeeds()
+        {
+            List<FullVoronoiSeed> activeSeeds = GetActiveSeeds();
+            for (int i = 0; i < activeSeeds.Count; ++i)
+            {
+                FullVoronoiSeed seed = activeSeeds[i];
+                seed.InstantiateMeshObject();
+            }
+        }
+
+        public FullVoronoiSeed[] GenerateFullRandomVoronoiSeeds()
+        {
+            VoronoiSeedData[] seeds = GenerateRandomSeedData();
+            FullVoronoiSeed[] fullVoronoiSeeds = new FullVoronoiSeed[seeds.Length];
+
+            for (int i = 0; i < seeds.Length; ++i)
+            {
+                VoronoiSeedData seed = seeds[i];
+                fullVoronoiSeeds[i] = new FullVoronoiSeed(seed);
+            }
+            return fullVoronoiSeeds;
+        }
+        /*
+        public void AddVoronoiSeedToPlane(VoronoiSeedData seed)
+        {
+            activeSeeds.Add(seed);
+            GameObject instantiatedSeed = GameObject.Instantiate(pSeedPrefab);
+            VoronoiSeedProvinceInit initializiationScript = instantiatedSeed.GetComponent<VoronoiSeedProvinceInit>();
+            initializiationScript.SetAssociatedSeed(seed);
+        }
+        */
+
+        private GameObject[] CreateProvincesFromSeeds(VoronoiSeedData[] seeds)
         {
             GameObject[] provinces = new GameObject[seeds.Length];
             for(int i = 0; i < seeds.Length; ++i)
             {
-                VoronoiSeed seed = seeds[i];
+                VoronoiSeedData seed = seeds[i];
                 GameObject province = CreateProvinceFromSeed(seed, seeds);
                 provinces[i] = province;
             }
             return provinces;
         }
 
-        private GameObject CreateProvinceFromSeed(VoronoiSeed seed, VoronoiSeed[] allSeeds)
+        private GameObject CreateProvinceFromSeed(VoronoiSeedData seed, VoronoiSeedData[] allSeeds)
         {
             VoronoiSeedProvinceInit provinceInit = InstantiateProvinceFromSeed(seed, allSeeds);
             return provinceInit.gameObject;
         }
 
-        private VoronoiSeedProvinceInit InstantiateProvinceFromSeed(VoronoiSeed seed, VoronoiSeed[] allSeeds)
+        private VoronoiSeedProvinceInit InstantiateProvinceFromSeed(VoronoiSeedData seed, VoronoiSeedData[] allSeeds)
         {
-            GameObject r_Province = Instantiate(p_Province);
+            GameObject r_Province = Instantiate(pSeedPrefab);
 
             VoronoiSeedProvinceInit provinceInit = r_Province.GetComponent<VoronoiSeedProvinceInit>();
             
             provinceInit.SetAssociatedSeed(seed);
             provinceInit.SetPositionFromSeed(this, seed);
-            provinceInit.CreateMeshFromSeed(this, seed);
+            //provinceInit.CreateMeshFromSeed(this, seed);
 
-            VoronoiSeed[] otherSeeds = allSeeds.Where( (iteratedSeed) => { return iteratedSeed != seed; } ).ToArray();
+            //VoronoiSeed[] otherSeeds = allSeeds.Where( (iteratedSeed) => { return iteratedSeed != seed; } ).ToArray();
 
             //^^EVERYTHING ABOVE WORKS
             
-            provinceInit.ClampVerticesToVoronoi(otherSeeds);
+            //provinceInit.ClampVerticesToVoronoi(otherSeeds);
 
             return provinceInit;
         }
 
-        /// <summary>
-        /// MOVE TO <see cref="VoronoiSeed"/>
-        /// </summary>
-        /// <returns></returns>
-        private VoronoiSeed[] GenerateSeeds()
+        private VoronoiSeedData[] GenerateRandomSeedData()
         {
-            VoronoiSeed[] seeds = new VoronoiSeed[numberOfProvinces];
+            VoronoiSeedData[] seeds = new VoronoiSeedData[numberOfProvinces];
 
-            float xBound = worldWidth / 2f;
-            float yBound = worldHeight / 2f;
+            float halfWorldWidth = GetHalfWorldWidth();
+            float halfWorldHeight = GetHalfWorldHeight();
 
-            Vector3 worldCreatorPosition = gameObject.transform.position;
-            xBound += worldCreatorPosition.x;
-            yBound += worldCreatorPosition.y;
+            Vector3 worldCenter = GetWorldCenter();
+            halfWorldWidth += worldCenter.x;
+            halfWorldHeight += worldCenter.y;
 
             for (int i = 0; i < seeds.Length; ++i)
             {
-                float x = Random.Range(-xBound, xBound);
-                float y = Random.Range(-yBound, yBound);
+                float x = Random.Range(-halfWorldWidth, halfWorldWidth);
+                float y = Random.Range(-halfWorldHeight, halfWorldHeight);
 
-                seeds[i] = new VoronoiSeed(x, y, seedRadius);
+                seeds[i] = new VoronoiSeedData(x, y, seedRadius);
             }
             return seeds;
         }
 
+        
+
+        public Vector2 GetWorldCenter()
+        {
+            return gameObject.transform.position;
+        }
+
+        public float GetWorldWidth()
+        {
+            return this.worldHeight;
+        }
+
+        public float GetWorldHeight()
+        {
+            return this.worldWidth;
+        }
+
+        public float GetHalfWorldWidth()
+        {
+            return this.worldWidth / 2f;
+        }
+
+        public float GetHalfWorldHeight()
+        {
+            return this.worldHeight / 2f;
+        }    
+
+        private List<FullVoronoiSeed> GetActiveSeeds()
+        {
+            return this.activeSeeds;
+        }
+
+        private void AddSeedRangeUpdate(IEnumerable<FullVoronoiSeed> fullVoronoiSeeds)
+        {
+            AddSeedRangeNonUpdate(fullVoronoiSeeds);
+            UpdateAllSeedsAndTheirMesh();
+        }
+
+        private void AddSeedRangeNonUpdate(IEnumerable<FullVoronoiSeed> fullVoronoiSeeds)
+        {
+            GetActiveSeeds().AddRange(fullVoronoiSeeds);
+        }
+
+        public CornerData GetCornerData()
+        {
+            return this.cornerData;
+        }
+
+        public void SetCornerData(CornerData cornerData)
+        {
+            this.cornerData = cornerData;
+        }
+
     }
 }
 
 
-namespace ElectedByVictory.WorldCreation
-{
-    public class VoronoiSeed
-    {
-        /// <summary>
-        /// The x world position of the seed.
-        /// </summary>
-        private float x;
-        /// <summary>
-        /// The y world position of the seed.
-        /// </summary>
-        private float y;
-
-        private Circle circleEquation;
-
-        public VoronoiSeed(float x, float y, float circleRadius)
-        {
-            SetX(x);
-            SetY(y);
-            SetCircleEquation(circleRadius);
-        }
-
-        public void SetCircleEquation(float circleRadius)
-        {
-            this.circleEquation = new Circle(GetX(), GetY(), circleRadius);
-        }
-
-        public Circle GetCircle()
-        {
-            return this.circleEquation;
-        }
-
-        public void SetX(float x)
-        {
-            this.x = x;
-            if(circleEquation != null)
-            {
-                circleEquation.SetX(x);
-            }
-            
-        }
-
-        public void SetY(float y)
-        {
-            this.y = y;
-            if (circleEquation != null)
-            {
-                circleEquation.SetY(y);
-            }
-        }
-
-        public float GetX()
-        {
-            return this.x;
-        }
-
-        public float GetY()
-        {
-            return this.y;
-        }
-
-    }
-
-    public class Circle
-    {
-        private float x;
-        private float y;
-        private float radius;
-
-        public Circle(float x, float y, float radius)
-        {
-            SetX(x);
-            SetY(y);
-            SetRadius(radius);
-        }
-
-        public void SetRadius(float radius)
-        {
-            this.radius = radius;
-        }
-
-        public void SetX(float x)
-        {
-            this.x = x;
-        }
-
-        public void SetY(float y)
-        {
-            this.y = y;
-        }
-
-        public float GetX()
-        {
-            return this.x;
-        }
-
-        public float GetY()
-        {
-            return this.y;
-        }
-
-        public float GetRadius()
-        {
-            return this.radius;
-        }
-
-        public Vector2 GetPointAtAngleDegrees(float angle)
-        {
-            angle = (float)(angle * (System.Math.PI / 180.0));
-            return GetPointAtAngleRad(angle);
-        }
-
-        public Vector2 GetPointAtAngleRad(float angle)
-        {
-            float angleX = GetX() + (GetRadius() * Mathf.Cos(angle));
-            float angleY = GetY() + (GetRadius() * Mathf.Sin(angle));
-
-            return new Vector2(angleX, angleY);
-        }
-
-
-
-    }
-
-}
-
+public delegate void FullSeedUpdateMethod(FullVoronoiSeed seedToUpdate, SharedVoronoiWorldData dataDeepCopy);

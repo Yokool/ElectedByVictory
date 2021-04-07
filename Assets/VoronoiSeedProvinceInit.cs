@@ -15,8 +15,18 @@ namespace ElectedByVictory.WorldCreation
         private PolygonCollider2D polygonCollider2D;
         private MeshFilter provinceMeshFilter;
 
-        private VoronoiSeed associatedSeed;
+        private VoronoiSeedData associatedSeed;
+        private List<VoronoiSeedData> cachedSeeds;
 
+        public void SetCachedSeeds(List<VoronoiSeedData> newSeeds)
+        {
+            cachedSeeds = new List<VoronoiSeedData>();
+            for(int i = 0; i < newSeeds.Count; ++i)
+            {
+                VoronoiSeedData newSeed = newSeeds[i];
+                cachedSeeds.Add(newSeed);
+            }
+        }
 
         private void OnEnable()
         {
@@ -51,12 +61,12 @@ namespace ElectedByVictory.WorldCreation
             this.seedVertexCount = seedVertexCount;
         }
 
-        public void SetAssociatedSeed(VoronoiSeed associatedSeed)
+        public void SetAssociatedSeed(VoronoiSeedData associatedSeed)
         {
             this.associatedSeed = associatedSeed;
         }
 
-        public void SetPositionFromSeed(WorldCreator worldCreator, VoronoiSeed seed)
+        public void SetPositionFromSeed(WorldCreator worldCreator, VoronoiSeedData seed)
         {
             Vector3 provincePosition = Vector3.zero;
             provincePosition.x = seed.GetX();
@@ -68,7 +78,7 @@ namespace ElectedByVictory.WorldCreation
             gameObject.transform.position = provincePosition;
         }
 
-        private Vector3[] CreateCircleWorldVertices(VoronoiSeed seed)
+        private Vector3[] CreateCircleWorldVertices(VoronoiSeedData seed)
         {
             Circle circleSeed = seed.GetCircle();
 
@@ -214,7 +224,7 @@ namespace ElectedByVictory.WorldCreation
 
         }
 
-        public void CreateMeshFromSeed(WorldCreator worldCreator, VoronoiSeed seed)
+        public void CreateMeshFromSeed(WorldCreator worldCreator, VoronoiSeedData seed)
         {
             Vector3[] circleWorldVertices = CreateCircleWorldVertices(seed);
             Vector3[] localSpaceMeshVertices = transform.InverseTransformPoints(circleWorldVertices);
@@ -228,8 +238,8 @@ namespace ElectedByVictory.WorldCreation
             SetupColliderComponent(localSpaceMeshVertices);
 
         }
-
-        public void ClampVerticesToVoronoi(VoronoiSeed[] otherSeeds)
+        /*
+        public void ClampVerticesToVoronoi(VoronoiSeedData[] otherSeeds)
         {
             Line[] clampingLines = GetClampingLines(otherSeeds);
 
@@ -259,7 +269,7 @@ namespace ElectedByVictory.WorldCreation
             provinceMesh.vertices = transform.InverseTransformPoints(worldSpaceVertices);
 
         }
-
+        */
         public Line[] GetLinesToVertices()
         {
             Mesh provinceMesh = provinceMeshFilter.mesh;
@@ -296,18 +306,18 @@ namespace ElectedByVictory.WorldCreation
 
         }
         */
-        /// <summary>
-        /// I'm 90% sure this works.
-        /// </summary>
-        /// <param name="otherSeeds"></param>
-        /// <returns></returns>
-        public Line[] GetClampingLines(VoronoiSeed[] otherSeeds)
+
+        /*
+        
+        MOVED TO CALCULATOR
+
+        public Line[] GetClampingLines(VoronoiSeedData[] otherSeeds)
         {
             Line[] perpendicularLines = new Line[otherSeeds.Length];
 
             for (int i = 0; i < otherSeeds.Length; ++i)
             {
-                VoronoiSeed seed = otherSeeds[i];
+                VoronoiSeedData seed = otherSeeds[i];
 
                 Vector2 worldOriginPos = gameObject.transform.position;
 
@@ -330,7 +340,7 @@ namespace ElectedByVictory.WorldCreation
                 Debug.Log(thisCenterToSeedCenterLine);
                 Debug.Log($"t_x: {originX} t_y: {originY} s_x: {seedCenterX} s_y: {seedCenterY}");
                 Debug.Log(thisCenterToSeedCenterLine.GetPointAt(0.5f));
-                */
+                
 
                 // Get a line perpendicular to this line, going through a point half through this line segment.
                 perpendicularLines[i] = thisCenterToSeedCenterLine.GetLinePerpendicularAtWay(0.5f);
@@ -339,7 +349,9 @@ namespace ElectedByVictory.WorldCreation
             return perpendicularLines;
         }
 
-        public VoronoiSeed GetAssociatedSeed()
+        */
+
+        public VoronoiSeedData GetAssociatedSeed()
         {
             return this.associatedSeed;
         }    

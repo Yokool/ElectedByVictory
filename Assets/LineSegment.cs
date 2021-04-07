@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class LineSegment : IHasSlopeAndYIntercept, IGetLineValuesAtPoint, ILineLegality, ICanIntersectLine, ICanIntersectLineSegment
+public class LineSegment : ILineAndSegmentUnion
 {
 
     private Line underlyingLine = null;
@@ -10,6 +10,11 @@ public class LineSegment : IHasSlopeAndYIntercept, IGetLineValuesAtPoint, ILineL
 
     private float x2;
     private float y2;
+
+    public LineSegment(Vector2 p1, Vector2 p2) : this(p1.x, p1.y, p2.x, p2.y)
+    {
+
+    }
 
     public LineSegment(float x1, float y1, float x2, float y2)
     {
@@ -72,8 +77,11 @@ public class LineSegment : IHasSlopeAndYIntercept, IGetLineValuesAtPoint, ILineL
 
     public Vector2? GetIntersectionWithLine(Line line)
     {
+        // Treat this line segment as a line first (through the reference to the underlying line), in order to get the intersection.
+        // (underlying line = the line segment represented as an endless line without 2 points defining the segment)
         Vector2? baseLineIntersection = GetUnderlyingLine().GetIntersectionWithLine(line);
 
+        // Then check if the intersection point is on this line (within the bounds of the two points that make the line)
         if (baseLineIntersection.HasValue && IsPointOnThisLine(baseLineIntersection.Value))
         {
             return baseLineIntersection.Value;
@@ -84,7 +92,18 @@ public class LineSegment : IHasSlopeAndYIntercept, IGetLineValuesAtPoint, ILineL
     }
     public Vector2? GetIntersectionWithLineSegment(LineSegment lineSegment)
     {
-        throw new System.NotImplementedException();
+        // We treat this line segment as an infinite line
+        // and get an intersection with the LINE SEGMENT
+        Vector2? baseLineIntersection = GetUnderlyingLine().GetIntersectionWithLineSegment(lineSegment);
+        //^That means that we now have an intersection that is guaranteed to be within the bounds/interval of the line segment
+        // but not within the bounds of this line.
+        // In order to assure that the point is within the bounds of this line, we check it separately
+        if (baseLineIntersection.HasValue && IsPointOnThisLine(baseLineIntersection.Value))
+        {
+            return baseLineIntersection.Value;
+        }
+
+        return null;
     }
 
     public float? GetXAt(float y)
@@ -156,7 +175,15 @@ public class LineSegment : IHasSlopeAndYIntercept, IGetLineValuesAtPoint, ILineL
         return PointUtilities.IsPointInClosedInterval(point, smallerX, largerX, smallerY, largerY);
     }
 
-
+    /// <summary>
+    /// Documentation (revision 1) - Last Update: 1.4.2021 12:11
+    /// The LineSegment plane assignment is done through treating this LineSegment as a Line through the reference
+    /// to the underlying values.
+    /// </summary>
+    public HalfPlane? GetLinePlaneAssignment(Vector2 point)
+    {
+        return GetUnderlyingLine().GetLinePlaneAssignment(point);
+    }
     public float GetX1()
     {
         return this.x1;
@@ -276,4 +303,6 @@ public class LineSegment : IHasSlopeAndYIntercept, IGetLineValuesAtPoint, ILineL
     {
         GetUnderlyingLine().SetIsLegal(isLegal);
     }
+
+    
 }
