@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 
 public static class MathEBV
 {
@@ -36,5 +37,17 @@ public static class MathEBV
         return ((value >= min) && (value <= max));
     }
 
+    public static float PointDistance(float x1, float y1, float x2, float y2)
+    {
+        float xDiff = (x2 - x1);
+        float yDiff = (y2 - y1);
+
+        return (float)Math.Sqrt(Math.Pow(xDiff, 2.0) + Math.Pow(yDiff, 2.0));
+    }
+
+    public static float PointDistance(Vector2 p1, Vector2 p2)
+    {
+        return MathEBV.PointDistance(p1.x, p1.y, p2.x, p2.y);
+    }
 
 }

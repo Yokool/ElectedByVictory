@@ -1,56 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-
-public interface IHasSlope
-{
-    float? GetSlope();
-    void SetSlope(float? m);
-    void SetSlope(float x1, float y1, float x2, float y2);
-
-    float? GetPerpendicularSlope();
-
-    bool IsVertical();
-}
-
-public interface IHasYIntercept
-{
-    float GetYIntercept();
-    void SetYIntercept(float b);
-    void SetYIntercept(float x, float y);
-
-    bool IsHorizontal();
-}
-
-public interface IHasSlopeAndYIntercept : IHasSlope, IHasYIntercept
-{
-    void SetLineValues(float? m, float b);
-    void SetLineValuesFromPoints(float x1, float y1, float x2, float y2);
-}
-
-public interface ILineLegality
-{
-    bool IsLegal();
-    void SetIsLegal(bool isLegal);
-}
-
-public interface IGetLineValuesAtPoint
-{
-    float? GetYAt(float x);
-    float? GetXAt(float y);
-}
-
-public interface ICanIntersectLine
-{
-    Vector2? GetIntersectionWithLine(Line line);
-}
-
-public interface ICanIntersectLineSegment
-{
-    Vector2? GetIntersectionWithLineSegment(LineSegment lineSegment);
-}
-
-public sealed class Line : IHasSlopeAndYIntercept, ILineLegality, IGetLineValuesAtPoint, ICanIntersectLine
+public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion
 {
     /// <summary>
     /// Contains the slope of the line,
@@ -104,6 +55,11 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineLegality, IGetLineValues
         SetYIntercept(b);
     }
 
+    public void SetTravelThroughPoint(Vector2 point)
+    {
+        SetTravelThrough(point.x, point.y);
+    }
+
     public float? GetYAt(float x)
     {
         // y = mx + b
@@ -115,6 +71,11 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineLegality, IGetLineValues
         }
 
         return slope.Value * x + GetYIntercept();
+    }
+
+    public Line GetShallowPerpendicularLine()
+    {
+        return new Line(GetPerpendicularSlope(), 0f);
     }
 
     public float? GetXAt(float y)
@@ -292,6 +253,15 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineLegality, IGetLineValues
 
     }
 
+    public Vector2? GetIntersectionWithLineSegment(LineSegment lineSegment)
+    {
+        // We can easily get the intersection with this line, through the reference to the line segment.
+        // It doesn't matter if we call lineSegment.GetIntersectionWith(this) or this.GetIntersectionWith(lineSegment)
+        // but the implementation is hidden away in the line segment class.
+        Vector2? intersection = lineSegment.GetIntersectionWithLine(this);
+        return intersection;
+    }
+
     public void SetIsLegal(bool isLegal)
     {
         this.isLegal = isLegal;
@@ -302,4 +272,57 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineLegality, IGetLineValues
         return this.isLegal;
     }
 
+    public HalfPlane? GetLinePlaneAssignment(Vector2 point)
+    {
+        // For vertical lines, the plane assignment is determined based on the x coordinate of the point
+        // If the point is left of the line then Plane.BOTTOM
+        // If the point is on the right of the line then Plane.TOP
+        if(IsVertical())
+        {
+            // For a vertical line, we'll be able to get the x point always.
+            // We couldn't get an X point if the line was horizontal, but that's not an issue here.
+            float xAtPointY = GetXAt(point.y).Value;
+
+            if (MathEBV.FloatEquals(point.x, xAtPointY))
+            {
+                return null;
+            }
+
+            if (point.x < xAtPointY)
+            {
+                return HalfPlane.BOTTOM;
+            }
+            else if(point.x > xAtPointY)
+            {
+                return HalfPlane.TOP;
+            }
+
+            
+        }
+
+        
+        
+
+        // Since we've checked for if the line is vertical, we can just get the
+        // value immediately. For a non-vertical line, we'll always be able to get the y point anywhere.
+        float yAtPointX = GetYAt(point.x).Value;
+
+        if (MathEBV.FloatEquals(point.y, yAtPointX))
+        {
+            return null;
+        }
+
+        if (point.y < yAtPointX)
+        {
+            return HalfPlane.BOTTOM;
+        }
+        else if(point.y > yAtPointX)
+        {
+            return HalfPlane.TOP;
+        }
+
+        Debug.LogError("This statement should not be reached.");
+        return null;
+
+    }
 }
