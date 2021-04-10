@@ -17,5 +17,5 @@
 /// </summary>
 public interface ICanIntersectLineAndSegment : ICanIntersectLine, ICanIntersectLineSegment
 {
-
+    
 }

@@ -1,0 +1,75 @@
+﻿using UnityEngine;
+
+
+namespace ElectedByVictory.WorldCreation
+{
+    public static class ConvexMeshCalculator
+    {
+
+        public static Vector2[] GetUVs(Vector2[] vertices)
+        {
+            if(vertices.Length < 3)
+            {
+                Debug.LogError("Shouldn't calculate vertices for vertex list that has less than 3 members.");
+                return new Vector2[0];
+            }
+
+            float maxX = float.MinValue;
+            float maxY = float.MinValue;
+            for(int i = 0; i < vertices.Length; ++i)
+            {
+                Vector2 vertex = vertices[i];
+
+                if(vertex.x > maxX)
+                {
+                    maxX = vertex.x;
+                }
+
+                if(vertex.y > maxY)
+                {
+                    maxY = vertex.y;
+                }
+
+            }
+
+            Vector2[] uvs = new Vector2[vertices.Length];
+
+            for(int i = 0; i < vertices.Length; ++i)
+            {
+                Vector2 vertex = vertices[i];
+
+                float x = (vertex.x / maxX);
+                float y = (vertex.y / maxY);
+
+                uvs[i] = new Vector2(x, y);
+            }
+
+            return uvs;
+
+        }
+
+        public static int[] GetTrianglesForConvexVertices(Vector2[] vertices)
+        {
+
+            if(vertices.Length < 3)
+            {
+                Debug.LogError("Can't construct triangles for a list of vertices whose length is smaller than 3.");
+                return new int[0];
+            }
+
+            int trianglesAmount = ((vertices.Length - 2) * 3);
+            int[] triangles = new int[trianglesAmount];
+
+            for(int i = 1; i < (vertices.Length - 1); ++i)
+            {
+                triangles[i] = 0;
+                triangles[i + 1] = i;
+                triangles[i + 2] = (i + 1);
+            }
+
+            return triangles;
+        }
+
+    }
+
+}

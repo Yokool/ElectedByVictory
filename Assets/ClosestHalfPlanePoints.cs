@@ -9,6 +9,7 @@ public class ClosestHalfPlanePoints
 
     private Vector2 pointToCalculateDistanceTo;
     private IPointPlaneAssignment pointPlaneLine;
+    
 
     public ClosestHalfPlanePoints(Vector2 pointToCalculateDistanceTo, IPointPlaneAssignment pointPlaneLine)
     {

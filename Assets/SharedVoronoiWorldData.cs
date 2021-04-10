@@ -4,35 +4,84 @@ using UnityEngine;
 
 namespace ElectedByVictory.WorldCreation
 {
-    public class MidpointLine
+
+    public class MidpointLineUtil
     {
-        private Line line;
-        private Vector2 midpoint;
+        private Vector2 startPoint;
+        private Vector2 endPoint;
 
-        public MidpointLine(Line line, Vector2 midpoint)
+
+        private Line cachedMidpointLine;
+        private Vector2 cachedMidpoint;
+
+        public MidpointLineUtil(Vector2 startPoint, Vector2 endPoint)
         {
-            SetLine(line);
-            SetMidpoint(midpoint);
+            SetStartAndEndPointRecalc(startPoint, endPoint);
         }
 
-        private void SetLine(Line line)
+        public void SetStartAndEndPointRecalc(Vector2 startPoint, Vector2 endPoint)
         {
-            this.line = line;
+            this.startPoint = startPoint;
+            this.endPoint = endPoint;
+            Recalculate();
         }
 
-        private void SetMidpoint(Vector2 midpoint)
+        public Vector2 GetStartPoint()
         {
-            this.midpoint = midpoint;
+            return this.startPoint;
+        }
+
+        public Vector2 GetEndPoint()
+        {
+            return this.endPoint;
+        }
+
+        public void Recalculate()
+        {
+            RecalculateMidpoint();
+            RecalculateLine();
+        }
+
+        private void RecalculateLine()
+        {
+            LineSegment startToEndLine = GetLineSegmentFromStartToEnd();
+            Line midpointLine = startToEndLine.GetMidpointLine();
+            _SetCachedLine(midpointLine);
+        }
+
+        private LineSegment GetLineSegmentFromStartToEnd()
+        {
+            Vector2 startPoint = GetStartPoint();
+            Vector2 endPoint = GetEndPoint();
+            return new LineSegment(startPoint, endPoint);
+        }
+
+        private void RecalculateMidpoint()
+        {
+            LineSegment lineFromStartToEnd = GetLineSegmentFromStartToEnd();
+            Vector2 midpoint = lineFromStartToEnd.GetPointAt(0.5f);
+
+            _SetCachedMidpoint(midpoint);
+        }
+
+        private void _SetCachedLine(Line cachedMidpointLine)
+        {
+            this.cachedMidpointLine = cachedMidpointLine;
+        }
+
+        private void _SetCachedMidpoint(Vector2 cachedMidpoitn)
+        {
+            this.cachedMidpoint = cachedMidpoitn;
         }
 
         public Line GetLine()
         {
-            return this.line;
+            return this.cachedMidpointLine;
         }
 
         public Vector2 GetMidpoint()
         {
-            return this.midpoint;
+            return this.cachedMidpoint;
         }
 
     }
@@ -55,7 +104,7 @@ namespace ElectedByVictory.WorldCreation
         /// 
         /// Documentation (version 1) - Last Update: 28.3.2021 13:17
         /// 
-        /// In order to get the midpoint line going from a seed to another seed, we use <see cref="GetMidpointLineFromTo(VoronoiSeedData, VoronoiSeedData)"/>.
+        /// In order to get the midpoint line going from a seed to another seed, we use <see cref="GetMidpointLineUtilFromTo(VoronoiSeedData, VoronoiSeedData)"/>.
         /// You will see that the first <see cref="VoronoiSeedData"/> key accesses an underlying dictionary, which itself uses
         /// a <see cref="VoronoiSeedData"/> key in order to access the <see cref="Line"/> object. We are getting a midpoint line, which is a line that is perpendicular
         /// and at the halfway point of a line segment whose endpoints are the first and second key.
@@ -73,9 +122,7 @@ namespace ElectedByVictory.WorldCreation
         /// 
         /// </summary>
         /// 
-        private Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, Line>> midpointLineFromToDictionary;
-
-        private Dictionary<Line, Vector2> midpointLineToMidpointDictionary;
+        private Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, MidpointLineUtil>> midpointLineFromToDictionary;
 
         public SharedVoronoiWorldData(VoronoiSeedData[] allSeeds, CornerData cornerData)
         {
@@ -84,41 +131,26 @@ namespace ElectedByVictory.WorldCreation
             CalculateMidpointLinesForAllPoints();
         }
 
-        public SharedVoronoiWorldData(VoronoiSeedData[] allSeeds, CornerData cornerData, Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, Line>> cachedMidpointLines, Dictionary<Line, Vector2> cachedMidpointLineToMidpointDictionary)
+        public SharedVoronoiWorldData(VoronoiSeedData[] allSeeds, CornerData cornerData,
+            Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, MidpointLineUtil>> cachedMidpointLineUtils)
         {
             CopyAllSeedsFromArrayToNewArray(allSeeds);
             SetCornerData(cornerData);
-            SetMidpointLineFromToDictionary(cachedMidpointLines);
-            SetMidpointLineToMidpointDictionary(cachedMidpointLineToMidpointDictionary);
+            SetMidpointLineFromToDictionary(cachedMidpointLineUtils);
         }
 
         /// <summary>
         /// This is different to using the assignment operator, as it does a deep copy of the registeredSeeds array.
         /// </summary>
         /// <param name="data"></param>
-        public SharedVoronoiWorldData(SharedVoronoiWorldData data) : this(data.GetAllSeeds(), data.GetCornerData(), data.GetMidpointLineFromToDictionary(), data.GetMidpointLineToMidpointDictionary())
+        public SharedVoronoiWorldData(SharedVoronoiWorldData data) : this(data.GetAllSeeds(), data.GetCornerData(), data.GetMidpointLineUtilDictionary())
         {
 
         }
 
-        public Vector2 GetMidpointFromMidpointLine(Line midpointLine)
+        public MidpointLineUtil GetMidpointLineUtilFromTo(VoronoiSeedData from, VoronoiSeedData to)
         {
-            return midpointLineToMidpointDictionary[midpointLine];
-        }
-
-        private Dictionary<Line, Vector2> GetMidpointLineToMidpointDictionary()
-        {
-            return this.midpointLineToMidpointDictionary;
-        }
-
-        private void SetMidpointLineToMidpointDictionary(Dictionary<Line, Vector2> midpointLineToMidpointDictionary)
-        {
-            this.midpointLineToMidpointDictionary = midpointLineToMidpointDictionary;
-        }
-
-        public Line GetMidpointLineFromTo(VoronoiSeedData from, VoronoiSeedData to)
-        {
-            Dictionary<VoronoiSeedData, Line> midpointLineDictionaryFrom = GetMidpointLineDictionaryFrom(from);
+            Dictionary<VoronoiSeedData, MidpointLineUtil> midpointLineDictionaryFrom = GetMidpointLineUtilDictionaryFrom(from);
 
             if(!midpointLineDictionaryFrom.ContainsKey(to))
             {
@@ -129,37 +161,57 @@ namespace ElectedByVictory.WorldCreation
             return midpointLineDictionaryFrom[to];
         }
 
-        public bool TryGetMidpointLineFromTo(VoronoiSeedData from, VoronoiSeedData to, out Line line)
+        public bool TryGetMidpointLineUtilFromToBothway(VoronoiSeedData from, VoronoiSeedData to, out MidpointLineUtil midpointLineUtil)
         {
-            line = null;
+            midpointLineUtil = null;
 
-            Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, Line>> midpointDictionary = GetMidpointLineFromToDictionary();
-            bool containsFirstKey = midpointDictionary.ContainsKey(from);
-            
-            if(!containsFirstKey)
+            if(_TryGetMidpointLineUtilFromToOneway(from, to, out MidpointLineUtil leftToRightParameter))
             {
-                return false;
+                midpointLineUtil = leftToRightParameter;
+                return true;
             }
 
-            Dictionary<VoronoiSeedData, Line> midpointDictionaryFrom = GetMidpointLineDictionaryFrom(from);
-            bool containsSecondKey = midpointDictionaryFrom.ContainsKey(to);
-
-            if(!containsSecondKey)
+            if(_TryGetMidpointLineUtilFromToOneway(to, from, out MidpointLineUtil rightToLeftParameter))
             {
-                return false;
+                midpointLineUtil = rightToLeftParameter;
+                return true;
             }
 
-            line = GetMidpointLineFromTo(from, to);
-            return true;
+            return false;
         }
 
+        private bool _TryGetMidpointLineUtilFromToOneway(VoronoiSeedData from, VoronoiSeedData to, out MidpointLineUtil midpointLineUtil)
+        {
+            midpointLineUtil = null;
+
+            Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, MidpointLineUtil>> midpointLineUtilDictionary = GetMidpointLineUtilDictionary();
+            
+            bool containsFrom = midpointLineUtilDictionary.ContainsKey(from);
+            
+            if(!containsFrom)
+            {
+                return false;
+            }
+
+            Dictionary<VoronoiSeedData, MidpointLineUtil> midpointDictionaryFrom = GetMidpointLineUtilDictionaryFrom(from);
+            bool containsTo = midpointDictionaryFrom.ContainsKey(to);
+
+            if(!containsTo)
+            {
+                return false;
+            }
+
+            midpointLineUtil = GetMidpointLineUtilFromTo(from, to);
+            return true;
+        }
+        /*
         public Line[] GetAllMidpointLinesNotToOrFromSeed(VoronoiSeedData seedToOmit)
         {
             List<Line> linesNotFromSeed = new List<Line>();
 
-            Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, Line>> midpointDictionary = GetMidpointLineFromToDictionary();
+            Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, MidpointLineUtil>> midpointLineUtilDictionary = GetMidpointLineUtilDictionary();
 
-            Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, Line>>.KeyCollection upperLayerKeys = midpointDictionary.Keys;
+            Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, Line>>.KeyCollection upperLayerKeys = midpointLineUtilDictionary.Keys;
 
             foreach (VoronoiSeedData endpoint1 in upperLayerKeys)
             {
@@ -168,7 +220,7 @@ namespace ElectedByVictory.WorldCreation
                     continue;
                 }
 
-                Dictionary<VoronoiSeedData, Line> midpointDictionaryLowerLayer = GetMidpointLineDictionaryFrom(endpoint1);
+                Dictionary<VoronoiSeedData, Line> midpointDictionaryLowerLayer = GetMidpointLineUtilDictionaryFrom(endpoint1);
 
                 Dictionary<VoronoiSeedData, Line>.KeyCollection lowerLayerKeys = midpointDictionaryLowerLayer.Keys;
 
@@ -179,7 +231,7 @@ namespace ElectedByVictory.WorldCreation
                         continue;
                     }
 
-                    Line midpointLine = GetMidpointLineFromTo(endpoint1, endpoint2);
+                    Line midpointLine = GetMidpointLineUtilFromTo(endpoint1, endpoint2);
 
                     // So we don't get duplicate entries for the same line, since we're getting
                     // the lines from both sides of the dictionary (key combinatorics).
@@ -196,7 +248,7 @@ namespace ElectedByVictory.WorldCreation
 
             return linesNotFromSeed.ToArray();
         }
-
+        */
         public VoronoiSeedData GetClosestSeedFromAllSeedsTo(VoronoiSeedData seed)
         {
             float seedX = seed.GetX();
@@ -224,19 +276,19 @@ namespace ElectedByVictory.WorldCreation
             return GetAllSeeds()[savedIndex];
         }
 
-        private Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, Line>> GetMidpointLineFromToDictionary()
+        private Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, MidpointLineUtil>> GetMidpointLineUtilDictionary()
         {
             return this.midpointLineFromToDictionary;
         }
 
-        private void SetMidpointLineFromToDictionary(Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, Line>> midpointLineFromToDictionary)
+        private void SetMidpointLineFromToDictionary(Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, MidpointLineUtil>> midpointLineFromToDictionary)
         {
             this.midpointLineFromToDictionary = midpointLineFromToDictionary;
         }
 
         private void InitMidpointLineFromToDictionary()
         {
-            SetMidpointLineFromToDictionary(new Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, Line>>());
+            SetMidpointLineFromToDictionary(new Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, MidpointLineUtil>>());
             VoronoiSeedData[] allSeeds = GetAllSeeds();
 
             for (int i = 0; i < allSeeds.Length; ++i)
@@ -248,36 +300,38 @@ namespace ElectedByVictory.WorldCreation
 
         private void InitMidpointLinesFromToForSingleSeed(VoronoiSeedData seed)
         {
-            Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, Line>> midpointLinesFromTo = GetMidpointLineFromToDictionary();
-            midpointLinesFromTo.Add(seed, new Dictionary<VoronoiSeedData, Line>());
+            Dictionary<VoronoiSeedData, Dictionary<VoronoiSeedData, MidpointLineUtil>> midpointLinesFromTo = GetMidpointLineUtilDictionary();
+            midpointLinesFromTo.Add(seed, new Dictionary<VoronoiSeedData, MidpointLineUtil>());
         }
 
-        public Dictionary<VoronoiSeedData, Line> GetMidpointLineDictionaryFrom(VoronoiSeedData seed)
+        public Dictionary<VoronoiSeedData, MidpointLineUtil> GetMidpointLineUtilDictionaryFrom(VoronoiSeedData seed)
         {
-            return GetMidpointLineFromToDictionary()[seed];
+            return GetMidpointLineUtilDictionary()[seed];
         }
 
-        private void AddMidpointLineFromTo(VoronoiSeedData from, VoronoiSeedData to, Line midpointLine)
+        private void EstablishMidpointLineUtilFromTo(VoronoiSeedData from, VoronoiSeedData to)
         {
-            GetMidpointLineDictionaryFrom(from).Add(to, midpointLine);
+            Vector2 fromPosition = from.GetPosition();
+            Vector2 toPosition = to.GetPosition();
+            MidpointLineUtil newLink = new MidpointLineUtil(fromPosition, toPosition);
+            EstablishMidpointLineUtilFromToExistingReference(from, to, newLink);
+        }
+
+        private void EstablishMidpointLineUtilFromToExistingReference(VoronoiSeedData from, VoronoiSeedData to, MidpointLineUtil existingLink)
+        {
+            GetMidpointLineUtilDictionaryFrom(from).Add(to, existingLink);
         }
 
         private void CalculateMidpointLinesForAllPoints()
         {
             InitMidpointLineFromToDictionary();
 
-            // Init midpoint line to midpoint dictionary
-            SetMidpointLineToMidpointDictionary(new Dictionary<Line, Vector2>());
-
             VoronoiSeedData[] allSeeds = GetAllSeeds();
-
-            List<VoronoiSeedData> endpointLowerKeys = new List<VoronoiSeedData>();
 
             for(int i = 0; i < allSeeds.Length; ++i)
             {
                 VoronoiSeedData seedToGenerateFor = allSeeds[i];
 
-                /* Enumerate all but other but so we can easily access this struct */
                 for(int j = 0; j < allSeeds.Length; ++j)
                 {
                     // Do not construct a line from itself to itself
@@ -288,29 +342,17 @@ namespace ElectedByVictory.WorldCreation
 
                     VoronoiSeedData otherSeed = allSeeds[j];
 
-                    /*
-                     * The dictionary is built so you can access the same line when you go
-                     * from: endpoint1
-                     * to: endpoint2
-                     * return: line12
-                     * 
-                     * and
-                     * 
-                     * from: endpoint2
-                     * to: endpoint1
-                     * return: line12
-                     * 
-                     * The order of the to and from parameter does not matter. This would work even without this piece
-                     * of code, but the order of parameters would return EQUAL objects by value, but two different objects by reference.
-                     * Thanks to this both parameter order scenarios will point to the same object.
-                     */
-                    if(TryGetMidpointLineFromTo(otherSeed, seedToGenerateFor, out Line existingLine))
+                    
+                    // Try to see if the other seed is already linked to the seed we are generating for
+                    if(_TryGetMidpointLineUtilFromToOneway(otherSeed, seedToGenerateFor, out MidpointLineUtil existingLineUtil))
                     {
-                        AddMidpointLineFromTo(seedToGenerateFor, otherSeed, existingLine);
+                        EstablishMidpointLineUtilFromToExistingReference(seedToGenerateFor, otherSeed, existingLineUtil);
                         continue;
                     }
 
+                    EstablishMidpointLineUtilFromTo(seedToGenerateFor, otherSeed);
 
+                    /*
                     float otherX = otherSeed.GetX();
                     float otherY = otherSeed.GetY();
 
@@ -324,19 +366,15 @@ namespace ElectedByVictory.WorldCreation
 
                     AddMidpointLineFromTo(seedToGenerateFor, otherSeed, midpointLine);
                     AddMidpointLineToMidpointEntry(midpointLine, midpoint);
+                    */
                 }
             }
         }
 
-        public Line[] GetAllMidpointLinesFrom(VoronoiSeedData seed)
+        public MidpointLineUtil[] GetAllMidpointLineUtilsFrom(VoronoiSeedData seed)
         {
-            Dictionary<VoronoiSeedData, Line> allLinesFromSeedToOtherDictionary = GetMidpointLineDictionaryFrom(seed);
+            Dictionary<VoronoiSeedData, MidpointLineUtil> allLinesFromSeedToOtherDictionary = GetMidpointLineUtilDictionaryFrom(seed);
             return allLinesFromSeedToOtherDictionary.Values.ToArray();
-        }
-
-        private void AddMidpointLineToMidpointEntry(Line midpointLine, Vector2 midpoint)
-        {
-            GetMidpointLineToMidpointDictionary().Add(midpointLine, midpoint);
         }
 
         private void CopyAllSeedsFromArrayToNewArray(VoronoiSeedData[] allSeeds)

@@ -1,4 +1,4 @@
-﻿public interface ILineAndSegmentUnion : IHasSlopeAndYIntercept, ILineLegality, IGetLineValuesAtPoint, ICanIntersectLineAndSegment, IPointPlaneAssignment
+﻿public interface ILineAndSegmentUnion : IHasSlopeAndYIntercept, ILineLegality, IGetLineValuesAtPoint, ICanIntersectLineAndSegmentUnion, IPointPlaneAssignment
 {
-
+    Line GetShallowPerpendicularLine();
 }
