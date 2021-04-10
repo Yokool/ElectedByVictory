@@ -1,6 +1,36 @@
 ﻿using UnityEngine;
 
-public class LineSegment : ILineAndSegmentUnion
+public static class LineArrayUtilities
+{
+
+    public static Line[] GetShallowPerpendicularLinesFromArray(Line[] lines)
+    {
+        Line[] shallowPerpendicularLines = new Line[lines.Length];
+        for(int i = 0; i < lines.Length; ++i)
+        {
+            Line line = lines[i];
+            shallowPerpendicularLines[i] = line.GetShallowPerpendicularLine();
+        }
+        return shallowPerpendicularLines;
+    }
+
+    public static Line[] GetDeepPerpendicularLinesFromArray(Line[] lines, Vector2 travelThrough)
+    {
+        // Shallow at this point
+        Line[] deepLines = GetShallowPerpendicularLinesFromArray(lines);
+
+        // Make them deep
+        for(int i = 0; i < deepLines.Length; ++i)
+        {
+            Line deepLine = deepLines[i];
+            deepLine.SetTravelThroughPoint(travelThrough);
+        }
+        return deepLines;
+    }
+
+}
+
+public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
 {
 
     private Line underlyingLine = null;
@@ -59,6 +89,18 @@ public class LineSegment : ILineAndSegmentUnion
         return new Vector2(x, y.Value);
     }
 
+    public Vector2 GetMidpoint()
+    {
+        return this.GetPointAt(0.5f);
+    }
+
+    public Line GetMidpointLine()
+    {
+        Line midpointLine = GetShallowPerpendicularLine();
+        Vector2 midpoint = GetMidpoint();
+        midpointLine.SetTravelThroughPoint(midpoint);
+        return midpointLine;
+    }
     
     /// <summary>
     /// Returns a line segment that is perpendicular to this line segment,
@@ -304,5 +346,13 @@ public class LineSegment : ILineAndSegmentUnion
         GetUnderlyingLine().SetIsLegal(isLegal);
     }
 
-    
+    public Line GetShallowPerpendicularLine()
+    {
+        return GetUnderlyingLine().GetShallowPerpendicularLine();
+    }
+
+    public Vector2? GetIntersectionWithLineAndSegmentUnion(ILineAndSegmentUnion lineAndSegmentUnion)
+    {
+        return lineAndSegmentUnion.GetIntersectionWithLineSegment(this);
+    }
 }

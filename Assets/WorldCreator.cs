@@ -25,7 +25,7 @@ namespace ElectedByVictory.WorldCreation
         private CornerData cornerData;
        
 
-        private List<FullVoronoiSeed> activeSeeds = new List<FullVoronoiSeed>();
+        private List<VoronoiSeedManager> activeSeeds = new List<VoronoiSeedManager>();
 
         /// <summary>
         /// Move to some manager.
@@ -44,13 +44,13 @@ namespace ElectedByVictory.WorldCreation
 
         public VoronoiSeedData[] ExtractActiveSeedData()
         {
-            List<FullVoronoiSeed> activeSeeds = GetActiveSeeds();
+            List<VoronoiSeedManager> activeSeeds = GetActiveSeeds();
             
             VoronoiSeedData[] extractedData = new VoronoiSeedData[activeSeeds.Count];
 
             for(int i = 0; i < activeSeeds.Count; ++i)
             {
-                FullVoronoiSeed activeSeed = activeSeeds[i];
+                VoronoiSeedManager activeSeed = activeSeeds[i];
                 VoronoiSeedData seedData = activeSeed.GetVoronoiSeedData();
 
                 extractedData[i] = seedData;
@@ -74,10 +74,10 @@ namespace ElectedByVictory.WorldCreation
             VoronoiSeedData[] extractedData = ExtractActiveSeedData();
             SharedVoronoiWorldData sharedData = new SharedVoronoiWorldData(extractedData, GetCornerData());
 
-            List<FullVoronoiSeed> seeds = GetActiveSeeds();
+            List<VoronoiSeedManager> seeds = GetActiveSeeds();
             for (int i = 0; i < seeds.Count; ++i)
             {
-                FullVoronoiSeed seed = seeds[i];
+                VoronoiSeedManager seed = seeds[i];
                 SharedVoronoiWorldData dataDeepCopy = new SharedVoronoiWorldData(sharedData);
                 internalUpdateMethod.Invoke(seed, dataDeepCopy);
             }
@@ -89,7 +89,7 @@ namespace ElectedByVictory.WorldCreation
         {
             SetupCorners();
             GenerateFullRandomVoronoiSeeds();
-            FullVoronoiSeed[] fullVoronoiSeeds = GenerateFullRandomVoronoiSeeds();
+            VoronoiSeedManager[] fullVoronoiSeeds = GenerateFullRandomVoronoiSeeds();
             AddSeedRangeUpdate(fullVoronoiSeeds);
             InstantiateMeshObjectsForAllSeeds();
             
@@ -98,23 +98,23 @@ namespace ElectedByVictory.WorldCreation
 
         private void InstantiateMeshObjectsForAllSeeds()
         {
-            List<FullVoronoiSeed> activeSeeds = GetActiveSeeds();
+            List<VoronoiSeedManager> activeSeeds = GetActiveSeeds();
             for (int i = 0; i < activeSeeds.Count; ++i)
             {
-                FullVoronoiSeed seed = activeSeeds[i];
+                VoronoiSeedManager seed = activeSeeds[i];
                 seed.InstantiateMeshObject();
             }
         }
 
-        public FullVoronoiSeed[] GenerateFullRandomVoronoiSeeds()
+        public VoronoiSeedManager[] GenerateFullRandomVoronoiSeeds()
         {
             VoronoiSeedData[] seeds = GenerateRandomSeedData();
-            FullVoronoiSeed[] fullVoronoiSeeds = new FullVoronoiSeed[seeds.Length];
+            VoronoiSeedManager[] fullVoronoiSeeds = new VoronoiSeedManager[seeds.Length];
 
             for (int i = 0; i < seeds.Length; ++i)
             {
                 VoronoiSeedData seed = seeds[i];
-                fullVoronoiSeeds[i] = new FullVoronoiSeed(seed);
+                fullVoronoiSeeds[i] = new VoronoiSeedManager(seed);
             }
             return fullVoronoiSeeds;
         }
@@ -213,18 +213,18 @@ namespace ElectedByVictory.WorldCreation
             return this.worldHeight / 2f;
         }    
 
-        private List<FullVoronoiSeed> GetActiveSeeds()
+        private List<VoronoiSeedManager> GetActiveSeeds()
         {
             return this.activeSeeds;
         }
 
-        private void AddSeedRangeUpdate(IEnumerable<FullVoronoiSeed> fullVoronoiSeeds)
+        private void AddSeedRangeUpdate(IEnumerable<VoronoiSeedManager> fullVoronoiSeeds)
         {
             AddSeedRangeNonUpdate(fullVoronoiSeeds);
             UpdateAllSeedsAndTheirMesh();
         }
 
-        private void AddSeedRangeNonUpdate(IEnumerable<FullVoronoiSeed> fullVoronoiSeeds)
+        private void AddSeedRangeNonUpdate(IEnumerable<VoronoiSeedManager> fullVoronoiSeeds)
         {
             GetActiveSeeds().AddRange(fullVoronoiSeeds);
         }
@@ -243,4 +243,4 @@ namespace ElectedByVictory.WorldCreation
 }
 
 
-public delegate void FullSeedUpdateMethod(FullVoronoiSeed seedToUpdate, SharedVoronoiWorldData dataDeepCopy);
+public delegate void FullSeedUpdateMethod(VoronoiSeedManager seedToUpdate, SharedVoronoiWorldData dataDeepCopy);

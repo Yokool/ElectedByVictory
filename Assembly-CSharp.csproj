@@ -57,6 +57,7 @@
   <ItemGroup>
     <Compile Include="Assets\UnitTests\ConcreteTests\LineT.cs" />
     <Compile Include="Assets\UnitTests\IUnitTestBundle.cs" />
+    <Compile Include="Assets\IHasMidpoint.cs" />
     <Compile Include="Assets\UnitTests\ConcreteTests\LineSegmentT.cs" />
     <Compile Include="Assets\TransformationUtilities.cs" />
     <Compile Include="Assets\UnitTests\UnitTestWrapper.cs" />
@@ -67,18 +68,24 @@
     <Compile Include="Assets\ICanIntersectLine.cs" />
     <Compile Include="Assets\UnitTests\IUnitTestMethod.cs" />
     <Compile Include="Assets\UnitTests\TestedClassMethodNameProvider.cs" />
+    <Compile Include="Assets\ILineAndSegmentUnion.cs" />
+    <Compile Include="Assets\ClosestHalfPlanePoints.cs" />
     <Compile Include="Assets\UnitTests\UnitTestMethod.cs" />
     <Compile Include="Assets\Circle.cs" />
-    <Compile Include="Assets\FullVoronoiSeed.cs" />
+    <Compile Include="Assets\VoronoiSeedManager.cs" />
     <Compile Include="Assets\LineUtilities.cs" />
     <Compile Include="Assets\IHasYIntercept.cs" />
     <Compile Include="Assets\UnitTests\ConcreteTests\PointUtilitiesT.cs" />
+    <Compile Include="Assets\IPointPlaneAssignment.cs" />
     <Compile Include="Assets\UnitTests\TestNameFactory.cs" />
     <Compile Include="Assets\IHasSlopeAndYIntercept.cs" />
     <Compile Include="Assets\SharedVoronoiWorldData.cs" />
     <Compile Include="Assets\Line.cs" />
     <Compile Include="Assets\IHasSlope.cs" />
+    <Compile Include="Assets\ICanIntersectLineAndSegment.cs" />
     <Compile Include="Assets\WorldCreator.cs" />
+    <Compile Include="Assets\IHasMidpointAndMidpointLine.cs" />
+    <Compile Include="Assets\HalfPlane.cs" />
     <Compile Include="Assets\UnitTests\TestClass.cs" />
     <Compile Include="Assets\ILineLegality.cs" />
     <Compile Include="Assets\GameResources.cs" />
@@ -88,13 +95,16 @@
     <Compile Include="Assets\CornerData.cs" />
     <Compile Include="Assets\IGetLineValuesAtPoint.cs" />
     <Compile Include="Assets\UnitTests\IUnitTestNameProvider.cs" />
+    <Compile Include="Assets\IHasMidpointLine.cs" />
     <Compile Include="Assets\UnitTests\CallingTestClassNameProvider.cs" />
     <Compile Include="Assets\ICanIntersectLineSegment.cs" />
-    <Compile Include="Assets\ICanIntersectLineAndSegment.cs" />
-    <Compile Include="Assets\IPointPlaneAssignment.cs" />
-    <Compile Include="Assets\ILineAndSegmentUnion.cs" />
-    <Compile Include="Assets\HalfPlane.cs" />
-    <Compile Include="Assets\ClosestHalfPlanePoints.cs" />
+    <Compile Include="Assets\MidpointLineUtilStatic.cs" />
+    <Compile Include="Assets\IGetDeepPerpendicularLine.cs" />
+    <Compile Include="Assets\ICanIntersectLineAndSegmentUnion.cs" />
+    <Compile Include="Assets\ConvexMeshCalculator.cs" />
+    <Compile Include="Assets\VoronoiMeshCalculator.cs" />
+    <Compile Include="Assets\VertexMath.cs" />
+    <Compile Include="Assets\PointMath.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion
+public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDeepPerpendicularLine
 {
     /// <summary>
     /// Contains the slope of the line,
@@ -324,5 +324,21 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion
         Debug.LogError("This statement should not be reached.");
         return null;
 
+    }
+    public Line GetDeepPerpendicularLinePoint(Vector2 point)
+    {
+        return GetDeepPerpendicularLine(point.x, point.y);
+    }
+
+    public Line GetDeepPerpendicularLine(float x, float y)
+    {
+        Line deepPerpendicularLine = GetShallowPerpendicularLine();
+        deepPerpendicularLine.SetTravelThrough(x, y);
+        return deepPerpendicularLine;
+    }
+
+    public Vector2? GetIntersectionWithLineAndSegmentUnion(ILineAndSegmentUnion lineAndSegmentUnion)
+    {
+        return lineAndSegmentUnion.GetIntersectionWithLine(this);
     }
 }
