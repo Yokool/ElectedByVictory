@@ -86,43 +86,6 @@ namespace ElectedByVictory.WorldCreation
 
             return perimeterLineUtils.ToArray();
 
-            /*
-            for(int i = 0; i < midpointLineUtilsFromThisSeed.Length; ++i)
-            {
-                MidpointLineUtil filteringLineUtil = midpointLineUtilsFromThisSeed[i];
-                Line filteringLine = filteringLineUtil.GetLine();
-
-                // Not getting a value for the plane assignment would be very exceptional and you
-                // would have to look into it.
-                HalfPlane thisSeedAssignedHalfPlane = filteringLine.GetLinePlaneAssignment(thisSeed).Value;
-
-                for(int j = 0; j < midpointLineUtilsFromThisSeed.Length; ++j)
-                {
-                    // Ignore the filtering line
-                    if(j == i)
-                    {
-                        continue;
-                    }
-
-                    MidpointLineUtil otherLine = midpointLineUtils[j];
-                    Vector2 otherLineMidpoint = otherLine.GetMidpoint();
-
-                    HalfPlane? otherSeedHalfPlane = filteringLine.GetLinePlaneAssignment(otherLineMidpoint);
-
-                    // If the otherLineMidpoint is directly on this line, then it's okay. Since it belongs to both planes.
-                    // Otherwise check if the midpoint line is in the same halfplane as thisSeed.
-                    if(!otherSeedHalfPlane.HasValue || thisSeedAssignedHalfPlane.Equals(otherSeedHalfPlane))
-                    {
-                        // Success, don't filter this line.
-                        continue;
-                    }
-
-                    // Failure, get rid of this line.
-
-                }
-
-            }
-            */
 
         }
 
@@ -138,78 +101,28 @@ namespace ElectedByVictory.WorldCreation
             VoronoiSeedData[] allSeeds = worldData.GetAllSeeds();
             CornerData cornerData = worldData.GetCornerData();
             LineSegment[] cornerEdgeLines = cornerData.GetEdgeLines();
+            Vector2 thisSeedPosition = thisSeed.GetPosition();
 
             cornerData.TryPopulateVerticeListWithClosestCorners(allSeeds, thisSeed, vertices);
 
             Debug.Log(vertices.Count);
 
-            MidpointLineUtil[] midpointLineUtilsFromThisSeed = worldData.GetAllMidpointLineUtilsFrom(thisSeed);
+            MidpointLineUtil[] perimeterMidpointLineUtils = worldData.GetAllMidpointLineUtilsFrom(thisSeed);
 
-            Debug.Log(midpointLineUtilsFromThisSeed.Length);
+            Debug.Log(perimeterMidpointLineUtils.Length);
 
-            Vector2 thisSeedPosition = thisSeed.GetPosition();
 
-            // TODO: THIS FILTERING DOESN'T WORK, LOOK INTO YOUR PICTURES
-
-            MidpointLineUtil[] perimeterMidpointLineUtils = FilterMidpointLinesFromSeedToPerimeterLines(thisSeedPosition, midpointLineUtilsFromThisSeed);
             Line[] perimeterMidpointLines = MidpointLineUtilStatic.ExtractLines(perimeterMidpointLineUtils);
 
-            Debug.Log(perimeterMidpointLines.Length);
-
             // All lines contains the perimeter lines and the cornerEdgeLines that close the world.
-            List<ILineAndSegmentUnion> allLines = new List<ILineAndSegmentUnion>();
+            List<ILineRaySegmentUnion> allLines = new List<ILineRaySegmentUnion>();
             allLines.AddRange(perimeterMidpointLines);
             allLines.AddRange(cornerEdgeLines);
 
-            // TODO: YOU CAN GET TWO INTERSECTIONS ON THE SAME HALFPLANE
-            // TODO: YOU CAN GET TWO INTERSECTIONS ON THE SAME HALFPLANE
-            // TODO: YOU CAN GET TWO INTERSECTIONS ON THE SAME HALFPLANE
-            // TODO: YOU CAN GET TWO INTERSECTIONS ON THE SAME HALFPLANE
 
-            /*
-             * How to tell if two seeds share a border? 
-             * 
-             * It is NOT the distance between the seeds.
-             * 
-             * The set of perimeter points which are not the vertices of the
-             * mesh make up the sides of the voronoi cells. Lets call this set PS.
-             * 
-             * If X is a member of PS then:
-             * 
-             * Distance from this seed center to X is the equal as the distance of X to ONE other seed center.
-             * 
-             * The vertices of the perimeter (which are not created by the intersection with the world edge) are where:
-             * 
-             * If vertex is V, then the distance from V to this seed center
-             * is equal to MORE THAN ONE other seed.
-             * 
-            */
+            List<LineSegment> adjustedMidpointLines = new List<LineSegment>(perimeterMidpointLineUtils.Length);
 
-            /*
-             * For every midpoint line: 
-             * 
-             * Get the TWO closest intersections on each Half_Plane. The intersections are checked against
-             * other midpoint lines and the edge lines.
-             * 
-             * It is possible that you will only get ONE point on the half plane, in that case you are intersecting
-             * the edge of the world.
-             * 
-             * For each half plane:
-             * 
-             * Create a line segment from the first closest vertex to the second.
-             * 
-             * If you only have 1 closest vertex then the first vertex will be the midpoint
-             * inbetween the seeds.
-             * 
-             * For these line segments get the midpoint for each one.
-             * 
-             * NOW YOU CAN FINALLY USE THESE LINES AND MIDPOINTS AS INTENDED
-             * IN THE FILTERING METHOD.
-             * 
-            */
-
-            // Although we want to find intersection only for the perimeterLines with all the lines (this means including
-            // the edge lines for voronoi cells that are hugging the edge of the world)
+            // Searching for the two closest points:
             for (int i = 0; i < perimeterMidpointLineUtils.Length; ++i)
             {
                 MidpointLineUtil perimeterMidpointLineUtil = perimeterMidpointLineUtils[i];
@@ -217,11 +130,11 @@ namespace ElectedByVictory.WorldCreation
                 Vector2 perimeterLineMidpoint = perimeterMidpointLineUtil.GetMidpoint();
 
                 Line perpendicularPlaneAssignmentLine = perimeterMidpointLine.GetDeepPerpendicularLinePoint(perimeterLineMidpoint);
-                ClosestHalfPlanePoints closestHalfPlanePoints = new ClosestHalfPlanePoints(perimeterLineMidpoint, perpendicularPlaneAssignmentLine);
+                ClosestHalfPlanePoints closestHalfPlanePoints = new ClosestHalfPlanePoints(perimeterLineMidpoint, perpendicularPlaneAssignmentLine, 2);
                 
                 for(int j = 0; j < allLines.Count; ++j)
                 {
-                    ILineAndSegmentUnion otherLine = allLines[j];
+                    ILineRaySegmentUnion otherLine = allLines[j];
 
                     // allLines contains the line we are finding the intersections for - obviously
                     // we don't want an intersection with ourselves so ignore it (checked by reference)
@@ -240,23 +153,60 @@ namespace ElectedByVictory.WorldCreation
                     closestHalfPlanePoints.TrySetPointAsClosest(intersectionPoint.Value);
                 }
 
-                (HalfPlane, Vector2?)[] closestIntersectionPointsOnHalfplanes = closestHalfPlanePoints.GetAllPlanesAndClosestPoints();
-
-                for(int k = 0; k < closestIntersectionPointsOnHalfplanes.Length; ++k)
+                // We should always at least hit the border of the voronoi diagram world.
+                if (!closestHalfPlanePoints.HasEveryPlaneAtLeastOnePoint())
                 {
-                    // not getting at least one intersection point on the halfplane would be very exceptional
-                    Vector2? intersectionPoint = closestIntersectionPointsOnHalfplanes[k].Item2;
-
-                    if(!intersectionPoint.HasValue)
-                    {
-                        //Debug.LogError("Exceptional situation.");
-                        continue;
-                    }
-
-                    vertices.Add(intersectionPoint.Value);
-
+                    Debug.LogError("This code block should not be executed.");
+                    continue;
                 }
 
+                // If each plane has only a single point.
+                if(closestHalfPlanePoints.NoPlaneHasMoreThanParameterPoints(1))
+                {
+                    HalfPlane[] planes = HalfPlaneUtilities.GetAllPlanes();
+
+                    Vector2[] segmentPoints = new Vector2[2]; 
+
+                    for(int l = 0; l < segmentPoints.Length; ++l)
+                    {
+                        HalfPlane plane = planes[l];
+                        
+                        // ClosestPointForPlane should not be null here, as the planes will have at least one point.
+                        segmentPoints[l] = closestHalfPlanePoints.GetClosestPointForPlane(plane).Value;
+                    }
+
+                    LineSegment adjustedLine = new LineSegment(segmentPoints[0], segmentPoints[1]);
+                    adjustedMidpointLines.Add(adjustedLine);
+                    continue;
+                }
+
+                // Here we are if any plane has more than 1 point.
+
+                HalfPlane[] allPlanes = HalfPlaneUtilities.GetAllPlanes();
+
+                for(int k = 0; k < allPlanes.Length; ++k)
+                {
+                    HalfPlane plane = allPlanes[k];
+
+                    int nonNullPoints = closestHalfPlanePoints.NonNullPointsOnPlaneCount(plane);
+
+                    LineSegment adjustedMidpointLine = null;
+
+                    Vector2 closestPointOnPlane = closestHalfPlanePoints.GetClosestPointForPlane(plane).Value;
+
+                    if (nonNullPoints == 2)
+                    {
+                        Vector2 furthestPoint = closestHalfPlanePoints.GetFurthestPointForPlane(plane).Value;
+                        adjustedMidpointLine = new LineSegment(closestPointOnPlane, furthestPoint);
+                    }
+                    else if(nonNullPoints == 1)
+                    {
+                        adjustedMidpointLine = new LineSegment(perimeterLineMidpoint, closestPointOnPlane);
+                    }
+
+                    adjustedMidpointLines.Add(adjustedMidpointLine);
+
+                }
             }
 
             Vector2[] sortedByAngleVertices = VertexMath.SortVerticesByAngleToPoint(vertices.ToArray(), thisSeedPosition);
@@ -267,64 +217,6 @@ namespace ElectedByVictory.WorldCreation
 
             return vertices.ToArray();
         }
-
-        private static void AddFirstTwoPlaneIntersectionPoints(VoronoiSeedData thisSeed, List<Vector2> vertices, Line midpointLineToClosestSeed,
-            ILineAndSegmentUnion[] midpointAndEdgeLines, IPointPlaneAssignment lineToClosestSeed, Vector2 midpointToClosestSeed)
-        {
-            ClosestHalfPlanePoints closestPointsObj = FindClosestIntersectionsFromLineForLinesOnSeperatePlanes(midpointLineToClosestSeed, midpointAndEdgeLines, lineToClosestSeed, midpointToClosestSeed);
-
-            (HalfPlane, Vector2?)[] planesAndClosestPoints = closestPointsObj.GetAllPlanesAndClosestPoints();
-
-            for (int i = 0; i < planesAndClosestPoints.Length; ++i)
-            {
-                (HalfPlane, Vector2?) planeAndClosestPoint = planesAndClosestPoints[i];
-
-                HalfPlane plane = planeAndClosestPoint.Item1;
-
-                // We should always be able to find at least one intersection
-                // But actually there is a chance that the intersection point will be on the line
-                // TODO: LOOK FOR ERRORS, IF THIS HAPPENS
-
-                if (!planeAndClosestPoint.Item2.HasValue)
-                {
-                    Debug.LogError("See comment.");
-                    continue;
-                }
-
-                Vector2 closestIntersectionPoint = planeAndClosestPoint.Item2.Value;
-
-                vertices.Add(closestIntersectionPoint);
-
-                Line newPerpendicularLine = midpointLineToClosestSeed.GetShallowPerpendicularLine();
-                newPerpendicularLine.SetTravelThroughPoint(closestIntersectionPoint);
-
-                //^^Use this line for the new intersection
-                // Basically recreate this method but instead of adding two points, add only a single point
-                // And that is the point that is closest to the thisSeed
-            }
-        }
-
-        /// <summary>
-        /// Finds an the closest intersections for all existing <see cref="Plane"/>s of a <see cref="Line"/> with a list of <see cref="ILineAndSegmentUnion"/>
-        /// </summary>
-        private static ClosestHalfPlanePoints FindClosestIntersectionsFromLineForLinesOnSeperatePlanes(Line line, ILineAndSegmentUnion[] possibleIntersectionLines,
-            IPointPlaneAssignment planeAssignmentLine, Vector2 pointToCalculateDistanceTo)
-        {
-            ClosestHalfPlanePoints closestIntersectionPointsForPlanes = new ClosestHalfPlanePoints(pointToCalculateDistanceTo, planeAssignmentLine);
-            for (int i = 0; i < possibleIntersectionLines.Length; ++i)
-            {
-                ILineAndSegmentUnion otherLine = possibleIntersectionLines[i];
-
-                Vector2? intersection = otherLine.GetIntersectionWithLine(line);
-
-                if (intersection.HasValue)
-                {
-                    closestIntersectionPointsForPlanes.TrySetPointAsClosest(intersection.Value);
-                }
-            }
-            return closestIntersectionPointsForPlanes;
-        }
-
 
         private void SetWorldData(SharedVoronoiWorldData worldData)
         {

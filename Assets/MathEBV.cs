@@ -3,6 +3,31 @@ using System;
 
 public static class MathEBV
 {
+    public static float Average(params float[] numbers)
+    {
+        float average = 0f;
+
+        for(int i = 0; i < numbers.Length; ++i)
+        {
+            average = numbers[i];
+        }
+        average /= (numbers.Length);
+
+        return average;
+    }
+
+    public static bool NullableFloatEquals(float? f1, float? f2, float epsilon = 0.01f)
+    {
+        // Both have a value => then check the value
+        if(f1.HasValue && f2.HasValue)
+        {
+            return MathEBV.FloatEquals(f1.Value, f2.Value);
+        }
+
+        // Both of them don't have a value => they are equal, otherwise not
+        return !f1.HasValue && !f2.HasValue;
+    }
+
     public static bool FloatEquals(float f1, float f2, float epsilon = 0.01f)
     {
         return System.Math.Abs(f2 - f1) < epsilon;
@@ -34,7 +59,10 @@ public static class MathEBV
 
     public static bool IsValueInClosedInterval(float value, float min, float max)
     {
-        return ((value >= min) && (value <= max));
+        float trueMin = Math.Min(min, max);
+        float trueMax = Math.Max(min, max);
+
+        return ((value >= trueMin) && (value <= trueMax));
     }
 
     public static float PointDistance(float x1, float y1, float x2, float y2)

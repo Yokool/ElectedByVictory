@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public static class LineUtilities
 {
@@ -45,6 +46,7 @@ public static class LineUtilities
             intersectionPoint = LeftNormalRightVertical(m1.Value, b1, b2);
         }
 
+
         return true;
 
     }
@@ -68,8 +70,71 @@ public static class LineUtilities
         float b = y - m.Value * x;
         return b;
     }
+    
+    public static (Vector2, Vector2) GetLineRayPointInterval(LineRay lineRay)
+    {
+        Vector2 intervalStart = lineRay.GetOrigin();
+
+        Vector2 innerPoint = lineRay.GetInnerPoint();
+
+        float xIntervalEnd = GetLineRayIntervalEnd(intervalStart.x, innerPoint.x);
+        float yIntervalEnd = GetLineRayIntervalEnd(intervalStart.y, innerPoint.y);
+
+        return (intervalStart, new Vector2(xIntervalEnd, yIntervalEnd));
+    }
+
+    public static bool IsXInRayInterval(float x, LineRay ray)
+    {
+        Vector2 origin = ray.GetOrigin();
+        Vector2 innerPoint = ray.GetInnerPoint();
+
+        float originX = origin.x;
+        float innerPointX = innerPoint.x;
+
+        return internal_IsInRayInterval(x, originX, innerPointX);
+    }
+
+    private static bool internal_IsInRayInterval(float value, float originValue, float innerPointValue)
+    {
+        float intervalVal = GetLineRayIntervalEnd(originValue, innerPointValue);
+        return MathEBV.IsValueInClosedInterval(value, originValue, intervalVal);
+    }
+
+    private static float GetLineRayIntervalEnd(float originValue, float innerPointValue)
+    {
+        return (innerPointValue > originValue) ? (float.MaxValue) : (float.MinValue);
+    }
+
+    public static bool IsYInRayInterval(float y, LineRay ray)
+    {
+        Vector2 origin = ray.GetOrigin();
+        Vector2 innerPoint = ray.GetInnerPoint();
+
+        float originY = origin.y;
+        float innerPointY = innerPoint.y;
+
+        return internal_IsInRayInterval(y, originY, innerPointY);
+    }
+
+    public static bool IsPointInRayInterval(LineRay lineRay, Vector2 point)
+    {
+        return (IsXInRayInterval(point.x, lineRay) && IsYInRayInterval(point.y, lineRay));
+    }
+
+    public static bool IsPointInLineSegmentInterval(LineSegment lineSegment, Vector2 point)
+    {
+        Vector2 endPoint1 = lineSegment.GetEndPoint1();
+        Vector2 endPoint2 = lineSegment.GetEndPoint2();
+
+        LineRay ray1 = new LineRay(endPoint1, endPoint2);
+        LineRay ray2 = new LineRay(endPoint2, endPoint1);
+
+        bool ray1Interval = IsPointInRayInterval(ray1, point);
+        bool ray2Interval = IsPointInRayInterval(ray2, point);
+
+        return (ray1Interval && ray2Interval);
+    }
 
     
-
 
 }

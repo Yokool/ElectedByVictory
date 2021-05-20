@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ElectedByVictory.WorldCreation
 {
-    public struct Circle
+    public struct Circle : ISetContainsPoint
     {
 
         public override string ToString()
@@ -56,6 +56,11 @@ namespace ElectedByVictory.WorldCreation
             SetRadius(radius);
         }
 
+        public Circle(Vector2 center, float radius) : this(center.x, center.y, radius)
+        {
+
+        }
+
         public void SetRadius(float radius)
         {
             this.radius = radius;
@@ -100,8 +105,19 @@ namespace ElectedByVictory.WorldCreation
             return new Vector2(angleX, angleY);
         }
 
+        public Vector2 GetCenter()
+        {
+            return new Vector2(GetX(), GetY());
+        }
 
+        public bool ContainsPoint(Vector2 point)
+        {
+            Vector2 center = GetCenter();
+            float distanceFromCenterToPoint = MathEBV.PointDistance(center, point);
+            float radius = GetRadius();
 
+            return (distanceFromCenterToPoint <= radius);
+        }
     }
 
 }

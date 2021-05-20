@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDeepPerpendicularLine
+public sealed class Line : IHasSlopeAndYIntercept, ILineRaySegmentUnion, IGetDeepPerpendicularLine
 {
     /// <summary>
     /// Contains the slope of the line,
@@ -12,8 +12,6 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
 
     private float b;
 
-    private bool isLegal = false;
-
     public override string ToString()
     {
         float? slope = GetSlope();
@@ -22,6 +20,11 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
         string returnValue = $"LINE: m = {{{slopeString}}} b = {{{GetYIntercept()}}}";
         
         return returnValue;
+    }
+
+    public Line(Vector2 p1, Vector2 p2) : this(p1.x, p1.y, p2.x, p2.y)
+    {
+
     }
 
     public Line(float x1, float y1, float x2, float y2)
@@ -65,7 +68,8 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
         // y = mx + b
         float? slope = GetSlope();
 
-        if (!slope.HasValue)
+        // Either return no point or all the Ys, which doesn't make sense so return null. 
+        if (IsVertical())
         {
             return null;
         }
@@ -73,7 +77,7 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
         return slope.Value * x + GetYIntercept();
     }
 
-    public Line GetShallowPerpendicularLine()
+    private Line GetShallowPerpendicularLine()
     {
         return new Line(GetPerpendicularSlope(), 0f);
     }
@@ -82,10 +86,23 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
     {
         float? slope = GetSlope();
 
-        if (!slope.HasValue)
+        // For a vertical line, all the values Y are on the position of the line, also known as
+        // you will find any Y at the x position of the vertical line.
+        if (IsVertical())
         {
             // b equals the x position of the line in this case
             return GetYIntercept();
+        }
+
+        // If it is horizontal, then you will find that the line has only a single value of y. Therefore
+        // you will either find the y you want anywhere on the line or you won't find it at all. Therefore return null.
+        // If y = 5 and your param is 5, then there is no single x coordinate associated with 5
+        // there is an infinite number of them.
+        // If y = 5 and your param is 6, then there doesn't exist such a point on the line and you will get nothing.
+        // Therefore in both situations return null.
+        if(IsHorizontal())
+        {
+            return null;
         }
 
         // x = (y - b) / m
@@ -122,7 +139,7 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
 
     public bool IsHorizontal()
     {
-        // If it's vertical then m = undefined and we can't get its value
+        // If it's vertical then m = undefined and we can't get its .Value
         if (IsVertical())
         {
             return false;
@@ -154,15 +171,18 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
         return this.b;
     }
 
+    public Vector2? GetIntersectionWithRay(LineRay ray)
+    {
+        return ray.GetIntersectionWithLine(this);
+    }
+
     public void SetSlope(float x1, float y1, float x2, float y2)
     {
         bool isLegal = !(MathEBV.FloatEquals(x1, x2) && MathEBV.FloatEquals(y1, y2));
-        SetIsLegal(isLegal);
 
         if (!isLegal)
         {
-            Debug.LogError($"Tried to set a slope of the line: {this} - out of two points a, b where a = b; a = {{x: {x1} y: {y1}}}; b = {{x: {x2} y. {y2}}}. This is not possible, we need two non-equal points to construct a line.");
-            return;
+            throw ExceptionUtilities.ILLEGAL_LINE_EXCEPTION(this, x1, y1, x2, y2);
         }
 
         // TODO: DENOMINATOR = 0
@@ -190,13 +210,12 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
         SetYIntercept(x1, y1);
     }
 
-    public void SetSlope(float? m)
+    private void SetSlope(float? m)
     {
         this.m = m;
-        SetIsLegal(true);
     }
 
-    public void SetYIntercept(float b)
+    private void SetYIntercept(float b)
     {
         this.b = b;
     }
@@ -220,7 +239,7 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
 
         if (LineUtilities.TrySpecialLineIntersection(m1, b1, m2, b2, out Vector2? intersectionPoint))
         {
-            return intersectionPoint.Value;
+            return intersectionPoint;
         }
 
         /*
@@ -262,14 +281,9 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
         return intersection;
     }
 
-    public void SetIsLegal(bool isLegal)
+    private static Exception GetLinePlaneAssigment_RETURN_EXCEPTION()
     {
-        this.isLegal = isLegal;
-    }
-
-    public bool IsLegal()
-    {
-        return this.isLegal;
+        return new Exception($"{nameof(GetLinePlaneAssignment)} exception.");
     }
 
     public HalfPlane? GetLinePlaneAssignment(Vector2 point)
@@ -322,7 +336,7 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
         }
 
         Debug.LogError("This statement should not be reached.");
-        return null;
+        throw GetLinePlaneAssigment_RETURN_EXCEPTION();
 
     }
     public Line GetDeepPerpendicularLinePoint(Vector2 point)
@@ -337,8 +351,252 @@ public sealed class Line : IHasSlopeAndYIntercept, ILineAndSegmentUnion, IGetDee
         return deepPerpendicularLine;
     }
 
-    public Vector2? GetIntersectionWithLineAndSegmentUnion(ILineAndSegmentUnion lineAndSegmentUnion)
+    public Vector2? GetIntersectionWithLineAndSegmentUnion(ILineRaySegmentUnion lineAndSegmentUnion)
     {
         return lineAndSegmentUnion.GetIntersectionWithLine(this);
+    }
+
+    public bool ContainsPoint(Vector2 point)
+    {
+
+        if(IsVertical())
+        {
+            return MathEBV.FloatEquals(point.x, GetYIntercept());
+        }
+        else if(IsHorizontal())
+        {
+            return MathEBV.FloatEquals(point.y, GetYIntercept());
+        }
+
+        float yAtPoint = GetYAt(point.x).Value;
+
+        return MathEBV.FloatEquals(point.y, yAtPoint);
+    }
+
+
+    public bool ThisLineEquals(Line line)
+    {
+        // From y = mx + b
+        // y intercept = b
+        // if x = UNDEFINED
+        // y intercept => x = y_intercept
+        // therefore for two horizontal lines are equal if their y intercepts are equal
+        // two vertical lines are equal if their x coordinate is equal, therefore if their y intercepts are equal
+        // and two normal lines still have to have the same y intercept
+        float thisYIntercept = GetYIntercept();
+        float lineYIntercept = GetYIntercept();
+
+        if(!MathEBV.FloatEquals(thisYIntercept, lineYIntercept))
+        {
+            return false;
+        }
+
+
+        float? thisSlope = GetSlope();
+        float? lineSlope = line.GetSlope();
+
+        // Check for
+        // UNDEFINED = UNDEFINED (both are vertical, their x coordinate was checked above)
+        // Check for
+        // 0f = 0f (both are horizontal, special case of m1 = m2, their y coordinate was checked above)
+        // Check for
+        // m1 = m2 (normal lines, y intercept was checked above)
+        return MathEBV.NullableFloatEquals(thisSlope, lineSlope);
+    }
+
+    public Vector2 FindNearestPointTo(Vector2 point)
+    {
+        float? getXAtY = GetXAt(point.y);
+        float? getYAtX = GetYAt(point.x);
+
+        if(IsVertical())
+        {
+            return new Vector2(getXAtY.Value, point.y);
+        }
+
+        if(IsHorizontal())
+        {
+            return new Vector2(point.x, getYAtX.Value);
+        }
+
+        float distanceHorizontal = Math.Abs(point.x - getXAtY.Value);
+        float distanceVertical = Math.Abs(point.y - getYAtX.Value);
+
+        if(distanceHorizontal < distanceVertical)
+        {
+            return new Vector2(getXAtY.Value, point.y);
+        }
+        else
+        {
+            return new Vector2(point.x, getYAtX.Value);
+        }
+
+    }
+
+    public ILineRaySegmentUnion CutOff(Vector2 planePoint, ILineRaySegmentUnion lineRaySegmentUnion)
+    {
+        return lineRaySegmentUnion.BeCutOffBy(planePoint, this);
+    }
+
+    public Line GetEqualLine()
+    {
+        return new Line(GetSlope(), GetYIntercept());
+    }
+
+    public Line GetDeepParallelLine(Vector2 point)
+    {
+        Line equalLine = GetEqualLine();
+        equalLine.SetTravelThroughPoint(point);
+        return equalLine;
+    }
+
+    public ILineRaySegmentUnion CutOffLine(Vector2 planePoint, Line line)
+    {
+        // Don't cut off equal lines
+        if(ThisLineEquals(line))
+        {
+            return line;
+        }
+
+
+        Vector2? intersection = GetIntersectionWithLine(line);
+
+        // Parallel lines, then the whole of the line is either in or outside the halfplane
+        if (!intersection.HasValue)
+        {
+            /*
+            float? lineX = line.GetXAt(planePoint.y);
+            float? lineY = line.GetYAt(planePoint.x);
+
+            float linePointX = (line.IsVertical()) ? (lineX.Value) : (planePoint.x);
+            float linePointY = (line.IsVertical()) ? (planePoint.y) : (lineY.Value);
+            
+            Vector2 linePoint = new Vector2(linePointX, linePointY);
+            */
+
+            Vector2 linePoint = line.FindNearestPointTo(planePoint);
+
+            // We either keep the whole line, or we get rid of it.
+            bool returnLine = IsPointInHalfPlane(planePoint, linePoint);
+
+            return returnLine ? line : null;
+        }
+
+        //The parallelLine will be in its entirety inside the half plane in which the
+        //planePoint is. Therefore any intersection it makes will also be inside the plane.
+        Line parallelLine = GetDeepParallelLine(planePoint);
+        
+        // Parameter line is not parallel with our line, that was checked by the intersection with this line earlier. 
+        Vector2 insidePlaneIntersection = parallelLine.GetIntersectionWithLine(line).Value;
+
+        return new LineRay(intersection.Value, insidePlaneIntersection);
+    }
+
+    public ILineRaySegmentUnion CutOffLineSegment(Vector2 planePoint, LineSegment lineSegment)
+    {
+        Vector2? intersection = GetIntersectionWithLineSegment(lineSegment);
+
+        Vector2 endpoint1 = lineSegment.GetEndPoint1();
+        Vector2 endpoint2 = lineSegment.GetEndPoint2();
+
+        bool endPoint1_HalfPlane = IsPointInHalfPlane(planePoint, endpoint1);
+        bool endPoint2_HalfPlane = IsPointInHalfPlane(planePoint, endpoint2);
+
+        if (!intersection.HasValue)
+        {
+            return (endPoint1_HalfPlane) ? (lineSegment) : (null);
+        }
+
+        Vector2 intersectionValue = intersection.Value;
+
+        Vector2? endpoint = null;
+
+        bool specialCase = (endpoint1.Equals(intersectionValue) || endpoint2.Equals(intersectionValue));
+
+
+        if (specialCase)
+        {
+            bool isLineSegmentInside = (IsPointInHalfPlane(planePoint, endpoint1) && IsPointInHalfPlane(planePoint, endpoint2));
+            return (isLineSegmentInside) ? (lineSegment) : (null);
+        }
+        else if (endPoint1_HalfPlane)
+        {
+            endpoint = endpoint1;
+        }
+        else if(endPoint2_HalfPlane)
+        {
+            endpoint = endpoint2;
+        }
+
+        return new LineSegment(intersectionValue, endpoint.Value);
+    }
+
+    public ILineRaySegmentUnion CutOffRay(Vector2 planePoint, LineRay ray)
+    {
+        Vector2? intersection = GetIntersectionWithRay(ray);
+
+        if(!intersection.HasValue)
+        {
+            Vector2 rayNearestPoint = ray.FindNearestPointTo(planePoint);
+            bool isPointInHalfPlane = IsPointInHalfPlane(planePoint, rayNearestPoint);
+            return (isPointInHalfPlane) ? (ray) : (null);
+        }
+
+        Vector2 rayOrigin = ray.GetOrigin();
+
+        
+        if(rayOrigin.Equals(intersection.Value))
+        {
+            Vector2 rayInnerPoint = ray.GetInnerPoint();
+
+            bool isRayInHalfPlane = IsPointInHalfPlane(planePoint, rayInnerPoint);
+
+            return (isRayInHalfPlane) ? (ray) : (null);
+        }
+        
+        // If the origin is inside the plane and we have intersected the ray, then the ray is
+        // trying to exit the plane, so cut it off into a segment.
+        if(IsPointInHalfPlane(planePoint, rayOrigin))
+        {
+            return new LineSegment(intersection.Value, rayOrigin);
+        }
+        // The origin is outside the plane and we have intersected, thus it is trying to get into the
+        // half plane, so we keep the ray but move its origin.
+        else
+        {
+            Vector2 symmetryHalfPlaneInnerPoint = PointUtilities.AxisSymmetry(intersection.Value, rayOrigin);
+            return new LineRay(intersection.Value, symmetryHalfPlaneInnerPoint);
+        }
+    }
+
+    public bool IsPointInHalfPlane(Vector2 planePoint, Vector2 point)
+    {
+        HalfPlane? planePointHalfPlane = GetLinePlaneAssignment(planePoint);
+
+        // The plane point is in both planes, therefore all other points will be in both planes.
+        if(!planePointHalfPlane.HasValue)
+        {
+            return true;
+        }
+
+        return IsPointInHalfPlane(planePointHalfPlane.Value, point);
+    }
+
+    public bool IsPointInHalfPlane(HalfPlane plane, Vector2 point)
+    {
+        HalfPlane? pointHalfPlane = GetLinePlaneAssignment(point);
+
+        // The plane is in both planes, therefore it is in the parameter plane.
+        if(!pointHalfPlane.HasValue)
+        {
+            return true;
+        }
+
+        return plane.Equals(pointHalfPlane);
+    }
+
+    public ILineRaySegmentUnion BeCutOffBy(Vector2 planePoint, Line planeSeperationLine)
+    {
+        return planeSeperationLine.CutOffLine(planePoint, this);
     }
 }

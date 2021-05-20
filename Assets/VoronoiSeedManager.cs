@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 
 namespace ElectedByVictory.WorldCreation
@@ -7,28 +8,43 @@ namespace ElectedByVictory.WorldCreation
     public class VoronoiSeedManager
     {
 
-        private GameObject rMeshObject;
-        private VoronoiSeedProvinceInit voronoiSeedProvinceInit;
-
         private VoronoiSeedData voronoiSeedData;
-        private SharedVoronoiWorldData sharedData;
+
+        private GameObject rMeshObject;
+
+        //private SharedVoronoiWorldData sharedData;
+
+        private VoronoiBuildData voronoiBuildData;
+
 
         public VoronoiSeedManager(VoronoiSeedData voronoiSeedData)
         {
-            SetVoronoiSeedDataUpdate(voronoiSeedData);
+            SetVoronoiSeedData(voronoiSeedData);
         }
 
-        private void SetVoronoiSeedDataNonUpdate(VoronoiSeedData voronoiSeedData)
+        private void SetVoronoiBuildData(VoronoiBuildData voronoiBuildData)
+        {
+            this.voronoiBuildData = voronoiBuildData;
+        }
+
+        private VoronoiBuildData GetVoronoiBuildData()
+        {
+            return this.voronoiBuildData;
+        }
+
+        private void SetVoronoiSeedData(VoronoiSeedData voronoiSeedData)
         {
             this.voronoiSeedData = voronoiSeedData;
         }
 
+        /*
         private void SetVoronoiSeedDataUpdate(VoronoiSeedData voronoiSeedData)
         {
             SetVoronoiSeedDataNonUpdate(voronoiSeedData);
             TryUpdateMesh();
         }
-
+        */
+        /*
         private void TryUpdateMesh()
         {
             if(IsReadyForMeshConstruction())
@@ -36,27 +52,34 @@ namespace ElectedByVictory.WorldCreation
                 UpdateMeshObjectUnsafe();
             }
         }
-
-        public void UpdateSharedVoronoiWorldDataUpdate(SharedVoronoiWorldData sharedData)
+        */
+        /*
+        public void DELETE_UpdateSharedVoronoiWorldDataUpdate(SharedVoronoiWorldData sharedData)
         {
-            UpdateSharedVoronoiWorldDataNonUpdate(sharedData);
+            SetSharedVoronoiWorldData(sharedData);
             TryUpdateMesh();
         }
 
-        public void UpdateSharedVoronoiWorldDataNonUpdate(SharedVoronoiWorldData sharedData)
+        
+        public void SetSharedVoronoiWorldData(SharedVoronoiWorldData sharedData)
         {
             this.sharedData = sharedData;
         }
+
+        */
 
         public VoronoiSeedData GetVoronoiSeedData()
         {
             return this.voronoiSeedData;
         }
 
+        /*
         private SharedVoronoiWorldData GetSharedData()
         {
             return this.sharedData;
         }
+        */
+        
 
         private void SetMeshObject(GameObject rMeshObject)
         {
@@ -68,7 +91,7 @@ namespace ElectedByVictory.WorldCreation
             return this.rMeshObject;
         }
 
-        public void InstantiateMeshObject()
+        public void InstantiateFreshMeshObject()
         {
             // Clear the last mesh object
             if(HasMeshObject())
@@ -80,7 +103,6 @@ namespace ElectedByVictory.WorldCreation
             GameObject rMeshObject = GameObject.Instantiate(GameResources.GET_INSTANCE().GetVoronoiMeshObject());
             
             SetMeshObject(rMeshObject);
-            UpdateMeshObjectUnsafe();
         }
 
         public bool HasMeshObject()
@@ -88,6 +110,7 @@ namespace ElectedByVictory.WorldCreation
             return (GetMeshObject() != null);
         }
 
+        /*
         /// <summary>
         /// Return true, if this object is fully setup and has all the data necessary to receive mesh
         /// calculation requests.
@@ -97,12 +120,20 @@ namespace ElectedByVictory.WorldCreation
         {
             return (GetSharedData() != null);
         }
-
+        */
+        /*
         public bool IsReadyForMeshConstruction()
         {
             return (IsReadyForCalculation() && HasMeshObject());
         }
+        */
 
+        public void RebuildSharedData(VoronoiSeedManager[] voronoiSeeds, CornerData cornerData)
+        {
+            SetVoronoiBuildData(new VoronoiBuildData(this, voronoiSeeds, cornerData));
+        }
+
+        /*
         /// <summary>
         /// 
         /// Documentation (version 1) - Last Update: 26.3.2021 - 11:52
@@ -143,6 +174,7 @@ namespace ElectedByVictory.WorldCreation
             meshFilter.mesh = cellMesh;
 
         }
+        */
 
         private Vector3[] Transform2DVerticesTo3D(Vector2[] vertices)
         {

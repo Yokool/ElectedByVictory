@@ -284,15 +284,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2398217211593096837, guid: d24ca6844a33be1498238f7607d3dd9e, type: 3}
       propertyPath: numberOfProvinces
-      value: 3
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 2398217211593096837, guid: d24ca6844a33be1498238f7607d3dd9e, type: 3}
       propertyPath: worldWidth
-      value: 100
+      value: 5000
       objectReference: {fileID: 0}
     - target: {fileID: 2398217211593096837, guid: d24ca6844a33be1498238f7607d3dd9e, type: 3}
       propertyPath: worldHeight
-      value: 100
+      value: 5000
       objectReference: {fileID: 0}
     - target: {fileID: 2398217211593096837, guid: d24ca6844a33be1498238f7607d3dd9e, type: 3}
       propertyPath: seedRadius
