@@ -1,36 +1,8 @@
-﻿using UnityEngine;
+﻿using ElectedByVictory.WorldCreation;
+using UnityEngine;
 
-public static class LineArrayUtilities
-{
 
-    public static Line[] GetShallowPerpendicularLinesFromArray(Line[] lines)
-    {
-        Line[] shallowPerpendicularLines = new Line[lines.Length];
-        for(int i = 0; i < lines.Length; ++i)
-        {
-            Line line = lines[i];
-            shallowPerpendicularLines[i] = line.GetShallowPerpendicularLine();
-        }
-        return shallowPerpendicularLines;
-    }
-
-    public static Line[] GetDeepPerpendicularLinesFromArray(Line[] lines, Vector2 travelThrough)
-    {
-        // Shallow at this point
-        Line[] deepLines = GetShallowPerpendicularLinesFromArray(lines);
-
-        // Make them deep
-        for(int i = 0; i < deepLines.Length; ++i)
-        {
-            Line deepLine = deepLines[i];
-            deepLine.SetTravelThroughPoint(travelThrough);
-        }
-        return deepLines;
-    }
-
-}
-
-public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
+public class LineSegment : ILineRaySegmentUnion, IHasMidpointAndMidpointLine, IHasSlope
 {
 
     private Line underlyingLine = null;
@@ -96,15 +68,12 @@ public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
 
     public Line GetMidpointLine()
     {
-        Line midpointLine = GetShallowPerpendicularLine();
         Vector2 midpoint = GetMidpoint();
-        midpointLine.SetTravelThroughPoint(midpoint);
-        return midpointLine;
+        return GetUnderlyingLine().GetDeepPerpendicularLinePoint(midpoint);
     }
     
     /// <summary>
     /// Returns a line segment that is perpendicular to this line segment,
-    /// which intersects this line segment exactly halfway.
     /// </summary>
     /// <returns></returns>
     public Line GetLinePerpendicularAtWay(float way)
@@ -124,7 +93,7 @@ public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
         Vector2? baseLineIntersection = GetUnderlyingLine().GetIntersectionWithLine(line);
 
         // Then check if the intersection point is on this line (within the bounds of the two points that make the line)
-        if (baseLineIntersection.HasValue && IsPointOnThisLine(baseLineIntersection.Value))
+        if (baseLineIntersection.HasValue && IsPointInLineInterval(baseLineIntersection.Value))
         {
             return baseLineIntersection.Value;
         }
@@ -140,7 +109,7 @@ public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
         //^That means that we now have an intersection that is guaranteed to be within the bounds/interval of the line segment
         // but not within the bounds of this line.
         // In order to assure that the point is within the bounds of this line, we check it separately
-        if (baseLineIntersection.HasValue && IsPointOnThisLine(baseLineIntersection.Value))
+        if (baseLineIntersection.HasValue && IsPointInLineInterval(baseLineIntersection.Value))
         {
             return baseLineIntersection.Value;
         }
@@ -173,12 +142,9 @@ public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
         return null;
     }
 
-    public bool IsPointOnThisLine(Vector2 point)
+    public bool IsPointInLineInterval(Vector2 point)
     {
-
-
-
-        
+        /*
         float smallerX;
         float largerX;
 
@@ -215,6 +181,9 @@ public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
         }
 
         return PointUtilities.IsPointInClosedInterval(point, smallerX, largerX, smallerY, largerY);
+        */
+
+        return LineUtilities.IsPointInLineSegmentInterval(this, point);
     }
 
     /// <summary>
@@ -246,6 +215,16 @@ public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
         return this.y2;
     }
 
+    public Vector2 GetEndPoint1()
+    {
+        return new Vector2(GetX1(), GetY1());
+    }
+
+    public Vector2 GetEndPoint2()
+    {
+        return new Vector2(GetX2(), GetY2());
+    }
+
     public void SetX1(float x1)
     {
         this.x1 = x1;
@@ -272,8 +251,9 @@ public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
 
     public void UpdateLine()
     {
-        SetSlope(GetX1(), GetY1(), GetX2(), GetY2());
-        SetYIntercept(GetX1(), GetY1());
+        Line underlyingLine = GetUnderlyingLine();
+        underlyingLine.SetSlope(GetX1(), GetY1(), GetX2(), GetY2());
+        underlyingLine.SetYIntercept(GetX1(), GetY1());
     }
 
     private Line GetUnderlyingLine()
@@ -296,16 +276,6 @@ public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
         return GetUnderlyingLine().GetSlope();
     }
 
-    public void SetSlope(float? m)
-    {
-        GetUnderlyingLine().SetSlope(m);
-    }
-
-    public void SetSlope(float x1, float y1, float x2, float y2)
-    {
-        GetUnderlyingLine().SetSlope(x1, y1, x2, y2);
-    }
-
     public float? GetPerpendicularSlope()
     {
         return GetUnderlyingLine().GetPerpendicularSlope();
@@ -316,43 +286,96 @@ public class LineSegment : ILineAndSegmentUnion, IHasMidpointAndMidpointLine
         return GetUnderlyingLine().IsVertical();
     }
 
-    public float GetYIntercept()
-    {
-        return GetUnderlyingLine().GetYIntercept();
-    }
-
-    public void SetYIntercept(float b)
-    {
-        GetUnderlyingLine().SetYIntercept(b);
-    }
-
-    public void SetYIntercept(float x, float y)
-    {
-        GetUnderlyingLine().SetYIntercept(x, y);
-    }
-
     public bool IsHorizontal()
     {
         return GetUnderlyingLine().IsHorizontal();
     }
 
-    public bool IsLegal()
-    {
-        return GetUnderlyingLine().IsLegal();
-    }
-
-    public void SetIsLegal(bool isLegal)
-    {
-        GetUnderlyingLine().SetIsLegal(isLegal);
-    }
-
-    public Line GetShallowPerpendicularLine()
-    {
-        return GetUnderlyingLine().GetShallowPerpendicularLine();
-    }
-
-    public Vector2? GetIntersectionWithLineAndSegmentUnion(ILineAndSegmentUnion lineAndSegmentUnion)
+    public Vector2? GetIntersectionWithLineAndSegmentUnion(ILineRaySegmentUnion lineAndSegmentUnion)
     {
         return lineAndSegmentUnion.GetIntersectionWithLineSegment(this);
+    }
+
+    public bool ContainsPoint(Vector2 point)
+    {
+        if(!IsPointInLineInterval(point))
+        {
+            return false;
+        }
+
+        bool underlyingLineCheck = GetUnderlyingLine().ContainsPoint(point);
+        return underlyingLineCheck;
+    }
+
+    public Vector2? GetIntersectionWithRay(LineRay ray)
+    {
+        return ray.GetIntersectionWithLineSegment(this);
+    }
+
+    public ILineRaySegmentUnion CutOff(Vector2 planePoint, ILineRaySegmentUnion lineRaySegmentUnion)
+    {
+        return GetUnderlyingLine().CutOff(planePoint, lineRaySegmentUnion);
+    }
+
+    public ILineRaySegmentUnion CutOffLine(Vector2 planePoint, Line line)
+    {
+        return GetUnderlyingLine().CutOffLine(planePoint, line);
+    }
+
+    public ILineRaySegmentUnion CutOffLineSegment(Vector2 planePoint, LineSegment lineSegment)
+    {
+        return GetUnderlyingLine().CutOffLineSegment(planePoint, lineSegment);
+    }
+
+    public ILineRaySegmentUnion CutOffRay(Vector2 planePoint, LineRay ray)
+    {
+        return GetUnderlyingLine().CutOffRay(planePoint, ray);
+    }
+
+    public bool IsPointInHalfPlane(Vector2 planePoint, Vector2 point)
+    {
+        return GetUnderlyingLine().IsPointInHalfPlane(planePoint, point);
+    }
+
+    public bool IsPointInHalfPlane(HalfPlane plane, Vector2 point)
+    {
+        return GetUnderlyingLine().IsPointInHalfPlane(plane, point);
+    }
+
+    private LineRay GetRayE1_E2()
+    {
+        return new LineRay(GetEndPoint1(), GetEndPoint2());
+    }
+
+    private LineRay GetRayE2_E1()
+    {
+        return new LineRay(GetEndPoint2(), GetEndPoint1());
+    }
+
+    public Vector2 FindNearestPointTo(Vector2 point)
+    {
+        LineRay e1ToE2 = GetRayE1_E2();
+        LineRay e2ToE1 = GetRayE2_E1();
+
+        Vector2 e1ToE2_ClosePoint = e1ToE2.FindNearestPointTo(point);
+        Vector2 e2ToE1_ClosePoint = e2ToE1.FindNearestPointTo(point);
+
+        float e1ToE2_Distance = MathEBV.PointDistance(GetEndPoint1(), e1ToE2_ClosePoint);
+        float e2ToE1_Distance = MathEBV.PointDistance(GetEndPoint2(), e2ToE1_ClosePoint);
+
+        if(e1ToE2_Distance < e2ToE1_Distance)
+        {
+            return e1ToE2_ClosePoint;
+        }
+        else
+        {
+            return e2ToE1_ClosePoint;
+        }
+
+    }
+
+    public ILineRaySegmentUnion BeCutOffBy(Vector2 planePoint, Line planeLine)
+    {
+        return planeLine.CutOffLineSegment(planePoint, this);
     }
 }

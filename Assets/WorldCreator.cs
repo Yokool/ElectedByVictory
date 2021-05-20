@@ -42,6 +42,7 @@ namespace ElectedByVictory.WorldCreation
             SetCornerData(cornerData);
         }
 
+        /*
         public VoronoiSeedData[] ExtractActiveSeedData()
         {
             List<VoronoiSeedManager> activeSeeds = GetActiveSeeds();
@@ -61,12 +62,12 @@ namespace ElectedByVictory.WorldCreation
 
         public void UpdateAllSeedsAndTheirMesh()
         {
-            InternalUpdateMethod( (seed, dataDeepCopy) => { seed.UpdateSharedVoronoiWorldDataUpdate(dataDeepCopy); } );
+            InternalUpdateMethod( (seed, dataDeepCopy) => { seed.DELETE_UpdateSharedVoronoiWorldDataUpdate(dataDeepCopy); } );
         }
 
         public void UpdateAllSeedsOnlyData()
         {
-            InternalUpdateMethod((seed, dataDeepCopy) => { seed.UpdateSharedVoronoiWorldDataNonUpdate(dataDeepCopy); });
+            InternalUpdateMethod((seed, dataDeepCopy) => { seed.SetSharedVoronoiWorldData(dataDeepCopy); });
         }
 
         private void InternalUpdateMethod(FullSeedUpdateMethod internalUpdateMethod)
@@ -83,29 +84,53 @@ namespace ElectedByVictory.WorldCreation
             }
         }
 
-        
+        */
 
         public void CreateWorld()
         {
             SetupCorners();
-            GenerateFullRandomVoronoiSeeds();
-            VoronoiSeedManager[] fullVoronoiSeeds = GenerateFullRandomVoronoiSeeds();
-            AddSeedRangeUpdate(fullVoronoiSeeds);
-            InstantiateMeshObjectsForAllSeeds();
-            
-            //GameObject[] provinces = CreateProvincesFromSeeds(seeds);
+            VoronoiSeedData[] fullVoronoiSeeds = GenerateRandomSeedData();
+            AddSeedRangeToWorldNonUpdate(fullVoronoiSeeds);
+            RebuildVoronoiWorld();
         }
 
+        public void RebuildVoronoiWorld()
+        {
+            RebuildVoronoiObjects();
+            RebuildVoronoiInsideData();
+        }
+
+        private void RebuildVoronoiInsideData()
+        {
+            List<VoronoiSeedManager> voronoiSeeds = GetActiveSeeds();
+            for (int i = 0; i < voronoiSeeds.Count; ++i)
+            {
+                VoronoiSeedManager voronoiSeed = voronoiSeeds[i];
+                voronoiSeed.RebuildSharedData(voronoiSeeds.ToArray(), GetCornerData());
+            }
+        }
+
+        private void RebuildVoronoiObjects()
+        {
+            List<VoronoiSeedManager> voronoiSeeds = GetActiveSeeds();
+            for (int i = 0; i < voronoiSeeds.Count; ++i)
+            {
+                VoronoiSeedManager voronoiSeed = voronoiSeeds[i];
+                voronoiSeed.InstantiateFreshMeshObject();
+            }
+        }
+        /*
         private void InstantiateMeshObjectsForAllSeeds()
         {
             List<VoronoiSeedManager> activeSeeds = GetActiveSeeds();
             for (int i = 0; i < activeSeeds.Count; ++i)
             {
                 VoronoiSeedManager seed = activeSeeds[i];
-                seed.InstantiateMeshObject();
+                seed.InstantiateFreshMeshObject();
             }
         }
-
+        */
+        /*
         public VoronoiSeedManager[] GenerateFullRandomVoronoiSeeds()
         {
             VoronoiSeedData[] seeds = GenerateRandomSeedData();
@@ -118,6 +143,7 @@ namespace ElectedByVictory.WorldCreation
             }
             return fullVoronoiSeeds;
         }
+        */
         /*
         public void AddVoronoiSeedToPlane(VoronoiSeedData seed)
         {
@@ -128,6 +154,7 @@ namespace ElectedByVictory.WorldCreation
         }
         */
 
+        /*
         private GameObject[] CreateProvincesFromSeeds(VoronoiSeedData[] seeds)
         {
             GameObject[] provinces = new GameObject[seeds.Length];
@@ -139,7 +166,7 @@ namespace ElectedByVictory.WorldCreation
             }
             return provinces;
         }
-
+        
         private GameObject CreateProvinceFromSeed(VoronoiSeedData seed, VoronoiSeedData[] allSeeds)
         {
             VoronoiSeedProvinceInit provinceInit = InstantiateProvinceFromSeed(seed, allSeeds);
@@ -164,6 +191,7 @@ namespace ElectedByVictory.WorldCreation
 
             return provinceInit;
         }
+        */
 
         private VoronoiSeedData[] GenerateRandomSeedData()
         {
@@ -218,16 +246,18 @@ namespace ElectedByVictory.WorldCreation
             return this.activeSeeds;
         }
 
-        private void AddSeedRangeUpdate(IEnumerable<VoronoiSeedManager> fullVoronoiSeeds)
+        private void AddSeedRangeToWorldNonUpdate(IEnumerable<VoronoiSeedData> voronoiSeedDataRange)
         {
-            AddSeedRangeNonUpdate(fullVoronoiSeeds);
-            UpdateAllSeedsAndTheirMesh();
+            VoronoiSeedManager[] seedManagers = new VoronoiSeedManager[voronoiSeedDataRange.Count()];
+            int i = 0;
+            foreach(VoronoiSeedData voronoiSeedData in voronoiSeedDataRange)
+            {
+                seedManagers[i] = new VoronoiSeedManager(voronoiSeedData);
+                ++i;
+            }
+            GetActiveSeeds().AddRange(seedManagers);
         }
 
-        private void AddSeedRangeNonUpdate(IEnumerable<VoronoiSeedManager> fullVoronoiSeeds)
-        {
-            GetActiveSeeds().AddRange(fullVoronoiSeeds);
-        }
 
         public CornerData GetCornerData()
         {
