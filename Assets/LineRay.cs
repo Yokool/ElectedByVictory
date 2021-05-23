@@ -95,9 +95,14 @@ public class LineRay : ILineRaySegmentUnion, IHasSlope
     {
         Vector2? intersection = GetUnderlyingLine().GetIntersectionWithLineSegment(lineSegment);
 
-        if(!intersection.HasValue && !ContainsPoint(intersection.Value))
+        if(!intersection.HasValue)
         {
             return null;
+        }
+
+        if(!ContainsPoint(intersection.Value))
+        {
+
         }
 
         return intersection.Value;
@@ -136,7 +141,12 @@ public class LineRay : ILineRaySegmentUnion, IHasSlope
     {
         Vector2? intersection = GetUnderlyingLine().GetIntersectionWithRay(ray);
 
-        if(!intersection.HasValue && !ContainsPoint(intersection.Value))
+        if(!intersection.HasValue)
+        {
+            return null;
+        }
+
+        if(!ContainsPoint(intersection.Value))
         {
             return null;
         }

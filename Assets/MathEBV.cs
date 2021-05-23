@@ -3,6 +3,9 @@ using System;
 
 public static class MathEBV
 {
+
+    const float FLOAT_EPSILON = 0.001f;
+
     public static float Average(params float[] numbers)
     {
         float average = 0f;
@@ -16,7 +19,7 @@ public static class MathEBV
         return average;
     }
 
-    public static bool NullableFloatEquals(float? f1, float? f2, float epsilon = 0.01f)
+    public static bool NullableFloatEquals(float? f1, float? f2, float epsilon = FLOAT_EPSILON)
     {
         // Both have a value => then check the value
         if(f1.HasValue && f2.HasValue)
@@ -28,7 +31,7 @@ public static class MathEBV
         return !f1.HasValue && !f2.HasValue;
     }
 
-    public static bool FloatEquals(float f1, float f2, float epsilon = 0.01f)
+    public static bool FloatEquals(float f1, float f2, float epsilon = FLOAT_EPSILON)
     {
         return System.Math.Abs(f2 - f1) < epsilon;
     }
@@ -38,12 +41,12 @@ public static class MathEBV
         return FloatEquals(f, 0.0f);
     }
 
-    public static bool PointsEqual(Vector2 p1, Vector2 p2, float epsilon = 0.01f)
+    public static bool PointsEqual(Vector2 p1, Vector2 p2, float epsilon = FLOAT_EPSILON)
     {
         return MathEBV.FloatEquals(p1.x, p2.x, epsilon) && MathEBV.FloatEquals(p1.y, p2.y, epsilon);
     }
 
-    public static bool PointsEqualNullable(Vector2? p1, Vector2? p2, float epsilon = 0.01f)
+    public static bool PointsEqualNullable(Vector2? p1, Vector2? p2, float epsilon = FLOAT_EPSILON)
     {
         if(p1.HasValue && p2.HasValue)
         {
@@ -61,6 +64,22 @@ public static class MathEBV
     {
         float trueMin = Math.Min(min, max);
         float trueMax = Math.Max(min, max);
+
+        // Sometimes almost equal float values seem larger than the interval even
+        // though they are on the edge, and are still part of it. Yet simple <= won't
+        // cut it there. Therefore we have to check if the value is very close to the interval.
+        if(FloatEquals(value, trueMin) || FloatEquals(value, trueMax))
+        {
+            return true;
+        }
+        /*
+        else
+        {
+            double p = (double)trueMax;
+            double pp = (double)value;
+            Debug.Log(pp + " " + p);
+        }
+        */
 
         return ((value >= trueMin) && (value <= trueMax));
     }

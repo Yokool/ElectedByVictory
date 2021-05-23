@@ -28,7 +28,6 @@ public class LineT : MonoBehaviour, IUnitTestBundle
         Line l2 = new Line(-1.2f, 0f, 0f, 6f);
 
         Vector2? expectedPoint = new Vector2(0.2f, 7f);
-
         return LineIntersectionTest(l1, l2, expectedPoint) && LineIntersectionTest(l1, l2, expectedPoint);
     }
 

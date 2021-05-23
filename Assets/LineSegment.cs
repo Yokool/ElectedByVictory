@@ -17,21 +17,26 @@ public class LineSegment : ILineRaySegmentUnion, IHasMidpointAndMidpointLine, IH
     {
 
     }
+    
+    public override string ToString()
+    {
+        return $"LineSegment: EndPoint1: {{{GetEndPoint1()}}} - Endpoint2: {{{GetEndPoint2()}}}";
+    }
 
     public LineSegment(float x1, float y1, float x2, float y2)
     {
-        SetUnderlyingLine(x1, y1, x2, y2);
-
-        SetX1(x1);
-        SetY1(y1);
-
-        SetX2(x2);
-        SetY2(y2);
+        SetLineValuesAndUnderlying(x1, y1, x2, y2);
     }
 
-    private void SetUnderlyingLine(float x1, float y1, float x2, float y2)
+    private void SetLineValuesAndUnderlying(float x1, float y1, float x2, float y2)
     {
-        this.underlyingLine = new Line(x1, y1, x2, y2);
+        _SetX1(x1);
+        _SetY1(y1);
+
+        _SetX2(x2);
+        _SetY2(y2);
+
+        _UpdateLine();
     }
 
     /// <summary>
@@ -93,12 +98,17 @@ public class LineSegment : ILineRaySegmentUnion, IHasMidpointAndMidpointLine, IH
         Vector2? baseLineIntersection = GetUnderlyingLine().GetIntersectionWithLine(line);
 
         // Then check if the intersection point is on this line (within the bounds of the two points that make the line)
-        if (baseLineIntersection.HasValue && IsPointInLineInterval(baseLineIntersection.Value))
+        if (!baseLineIntersection.HasValue)
         {
-            return baseLineIntersection.Value;
+            return null;
         }
-
-        return null;
+        
+        if(!ContainsPoint(baseLineIntersection.Value))
+        {
+            return null;
+        }
+        
+        return baseLineIntersection.Value;
 
     }
     public Vector2? GetIntersectionWithLineSegment(LineSegment lineSegment)
@@ -106,15 +116,21 @@ public class LineSegment : ILineRaySegmentUnion, IHasMidpointAndMidpointLine, IH
         // We treat this line segment as an infinite line
         // and get an intersection with the LINE SEGMENT
         Vector2? baseLineIntersection = GetUnderlyingLine().GetIntersectionWithLineSegment(lineSegment);
+
         //^That means that we now have an intersection that is guaranteed to be within the bounds/interval of the line segment
         // but not within the bounds of this line.
         // In order to assure that the point is within the bounds of this line, we check it separately
-        if (baseLineIntersection.HasValue && IsPointInLineInterval(baseLineIntersection.Value))
+        if (!baseLineIntersection.HasValue)
         {
-            return baseLineIntersection.Value;
+            return null;
         }
-
-        return null;
+        
+        if(!ContainsPoint(baseLineIntersection.Value))
+        {
+            return null;
+        }
+        
+        return baseLineIntersection.Value;
     }
 
     public float? GetXAt(float y)
@@ -225,50 +241,41 @@ public class LineSegment : ILineRaySegmentUnion, IHasMidpointAndMidpointLine, IH
         return new Vector2(GetX2(), GetY2());
     }
 
-    public void SetX1(float x1)
+    private void _SetX1(float x1)
     {
         this.x1 = x1;
-        UpdateLine();
     }
 
-    public void SetX2(float x2)
+    private void _SetX2(float x2)
     {
         this.x2 = x2;
-        UpdateLine();
     }
 
-    public void SetY1(float y1)
+    private void _SetY1(float y1)
     {
         this.y1 = y1;
-        UpdateLine();
     }
 
-    public void SetY2(float y2)
+    private void _SetY2(float y2)
     {
         this.y2 = y2;
-        UpdateLine();
     }
 
-    public void UpdateLine()
+    private void _UpdateLine()
     {
-        Line underlyingLine = GetUnderlyingLine();
-        underlyingLine.SetSlope(GetX1(), GetY1(), GetX2(), GetY2());
-        underlyingLine.SetYIntercept(GetX1(), GetY1());
+        Vector2 endpoint1 = GetEndPoint1();
+        Vector2 endpoint2 = GetEndPoint2();
+        SetUnderlyingLine(new Line(endpoint1, endpoint2));
     }
 
-    private Line GetUnderlyingLine()
+    private void SetUnderlyingLine(Line underlyingLine)
+    {
+        this.underlyingLine = underlyingLine;
+    }
+
+    public Line GetUnderlyingLine()
     {
         return this.underlyingLine;
-    }
-
-    public void SetLineValues(float? m, float b)
-    {
-        GetUnderlyingLine().SetLineValues(m, b);
-    }
-
-    public void SetLineValuesFromPoints(float x1, float y1, float x2, float y2)
-    {
-        GetUnderlyingLine().SetLineValuesFromPoints(x1, y1, x2, y2);
     }
 
     public float? GetSlope()

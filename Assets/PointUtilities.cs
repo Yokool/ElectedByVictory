@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using System;
+using ElectedByVictory.WorldCreation;
+using System.Linq;
 
 public static class PointUtilities
 {
@@ -88,6 +90,86 @@ public static class PointUtilities
         float symmetryY = (point.y + (dY * 2));
 
         return new Vector2(symmetryX, symmetryY);
+    }
+
+    public static Vector3[] Cast2DVerticesTo3D(Vector2[] _2DVertices)
+    {
+        return Cast2DVerticesTo3DAndSetZ(_2DVertices, 0.0f);
+    }
+
+    public static Vector3[] Cast2DVerticesTo3DAndSetZ(Vector2[] _2DVertices, float z)
+    {
+        Vector3[] _3DVertices = new Vector3[_2DVertices.Length];
+        for (int i = 0; i < _2DVertices.Length; ++i)
+        {
+            Vector2 _2DVertex = _2DVertices[i];
+            _3DVertices[i] = new Vector3(_2DVertex.x, _2DVertex.y, z);
+        }
+        return _3DVertices;
+    }
+
+    public static Vector2[] SortPointsByAngleToPointToCopy(Vector2 anglePoint, Vector2[] points)
+    {
+        Vector2[] points_copy = points.ToArray();
+
+        double[] angles = new double[points_copy.Length];
+        
+
+        for(int i = 0; i < points_copy.Length; ++i)
+        {
+            Vector2 point = points_copy[i];
+            Vector2 differenceVector = (point - anglePoint).normalized;
+
+            angles[i] = PointMath.PointAtan2(differenceVector);
+        }
+
+
+        for (int i = 0; i < points_copy.Length; ++i)
+        {
+            int smallerAngleIndex = i;
+            double smallestAngle = angles[i];
+
+            for(int j = (i + 1); j < points_copy.Length; ++j)
+            {
+                if(angles[j] < smallestAngle)
+                {
+                    smallestAngle = angles[j];
+                    smallerAngleIndex = j;
+                }
+            }
+
+            if(smallerAngleIndex == i)
+            {
+                continue;
+            }
+
+            Vector2 bufferPoint = points_copy[i];
+            double bufferAngle = angles[i];
+
+
+            points_copy[i] = points_copy[smallerAngleIndex];
+            angles[i] = angles[smallerAngleIndex];
+
+            points_copy[smallerAngleIndex] = bufferPoint;
+            angles[smallerAngleIndex] = bufferAngle;
+        }
+
+        return points_copy;
+    }
+
+
+    public static bool ArrayContainsPoint(Vector2[] points, Vector2 checkedPoint)
+    {
+        for(int i = 0; i < points.Length; ++i)
+        {
+            Vector2 arrayPoint = points[i];
+            if(PointMath.PointEquals(arrayPoint, checkedPoint))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }
