@@ -16,7 +16,6 @@ namespace ElectedByVictory.WorldCreation
             SetAllSeedsCache(allSeeds);
             SetSeedOwner(seedOwner);
             SetCornerDataCache(cornerData);
-            GetVoronoiCellEdges();
         }
 
         private VoronoiSeedManager[] GetAllSeedsCache()
@@ -49,34 +48,41 @@ namespace ElectedByVictory.WorldCreation
             this.seedOwner = seedOwner;
         }
 
-        private Vector2 GetVoronoiCellVertices()
+        private Vector2 GetVoronoiCellCenter()
         {
-            throw new System.Exception("Not implemented yet.");
+            Vector2 voronoiCellCenter = GetSeedOwner().GetVoronoiSeedData().GetPosition();
+            return voronoiCellCenter;
         }
 
-        private ILineRaySegmentUnion[] GetVoronoiCellEdges()
+        public Vector2[] GetVoronoiCellVertices()
         {
-            ILineRaySegmentUnion[] allWorldLines = BuildAllLines();
-            allWorldLines = CutOffToVoronoiEdges(allWorldLines);
+            ILineRaySegmentUnion[] cellEdges = GetVoronoiCellEdges();
 
 
-            // TESTING CODE
+            Vector2[] cellVertices = LineUtilities.GetAllUniqueIntersections(cellEdges);
 
-            for(int i = 0; i < allWorldLines.Length; ++i)
+            if(cellEdges.Length != cellVertices.Length)
             {
-                if(!(allWorldLines[i] is LineSegment))
-                {
-                    Debug.Log("OOOOOOOOOOOOOOO");
-                }
+                //Debug.Log(cellEdges.Length + " " + cellVertices.Length);
             }
 
-            return null;
+            cellVertices = PointUtilities.SortPointsByAngleToPointToCopy(GetVoronoiCellCenter(), cellVertices);
+
+            return cellVertices;
+        }
+
+        public ILineRaySegmentUnion[] GetVoronoiCellEdges()
+        {
+            ILineRaySegmentUnion[] allWorldLines = BuildAllLines();
+
+            allWorldLines = CutOffToVoronoiEdges(allWorldLines);
+            return allWorldLines;
         }
 
         private ILineRaySegmentUnion[] CutOffToVoronoiEdges(ILineRaySegmentUnion[] __allWorldLines)
         {
             ILineRaySegmentUnion[] allWorldLines_Copy = __allWorldLines.ToArray();
-            Vector2 voronoiCellCenter = GetSeedOwner().GetVoronoiSeedData().GetPosition();
+            Vector2 voronoiCellCenter = GetVoronoiCellCenter();
 
             for(int i = 0; i < allWorldLines_Copy.Length; ++i)
             {
@@ -122,7 +128,7 @@ namespace ElectedByVictory.WorldCreation
 
         private LineSegment[] BuildEdgeLines()
         {
-            return cornerDataCache.GetEdgeLines();
+            return GetCornerDataCache().GetEdgeLines();
         }
 
         private Line[] BuildMidpointLines()

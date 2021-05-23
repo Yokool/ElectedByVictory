@@ -133,8 +133,7 @@ GameObject:
   m_Component:
   - component: {fileID: 478358102}
   - component: {fileID: 478358101}
-  - component: {fileID: 478358100}
-  - component: {fileID: 478358103}
+  - component: {fileID: 478358104}
   m_Layer: 0
   m_Name: TestClass
   m_TagString: Untagged
@@ -142,18 +141,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &478358100
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 478358099}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 84df2e4a548cee541beb1c02bfce5604, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &478358101
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -180,7 +167,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &478358103
+--- !u!114 &478358104
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -189,7 +176,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 478358099}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bcb89220bd08b7a40b0e81e08bf79a2f, type: 3}
+  m_Script: {fileID: 11500000, guid: 3f6db8c17805f9a4b8c1bea8137a327b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &519420028
@@ -245,7 +232,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 90
+  orthographic size: 470.1639
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -284,15 +271,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2398217211593096837, guid: d24ca6844a33be1498238f7607d3dd9e, type: 3}
       propertyPath: numberOfProvinces
-      value: 50
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2398217211593096837, guid: d24ca6844a33be1498238f7607d3dd9e, type: 3}
       propertyPath: worldWidth
-      value: 5000
+      value: 1000
       objectReference: {fileID: 0}
     - target: {fileID: 2398217211593096837, guid: d24ca6844a33be1498238f7607d3dd9e, type: 3}
       propertyPath: worldHeight
-      value: 5000
+      value: 1000
       objectReference: {fileID: 0}
     - target: {fileID: 2398217211593096837, guid: d24ca6844a33be1498238f7607d3dd9e, type: 3}
       propertyPath: seedRadius

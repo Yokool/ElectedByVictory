@@ -80,7 +80,7 @@ namespace ElectedByVictory.WorldCreation
 
         private Vector3[] CreateCircleWorldVertices(VoronoiSeedData seed)
         {
-            Circle circleSeed = seed.GetCircle();
+            Circle circleSeed = seed.REMOVETHISMETHOD_DO_NOT_CALL_GetCircle();
 
             Vector3[] circleVertices = new Vector3[seedVertexCount];
 

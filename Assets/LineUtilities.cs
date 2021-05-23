@@ -1,4 +1,7 @@
-﻿using System;
+﻿using ElectedByVictory.WorldCreation;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public static class LineUtilities
@@ -35,23 +38,27 @@ public static class LineUtilities
             return true;
         }
 
-        // L1 = vertical => L2 = horizontal
+        // L1 = vertical => L2 = normal/horizontal
         if (L1Vertical)
         {
-            intersectionPoint = LeftNormalRightVertical(m2.Value, b2, b1);
+            intersectionPoint = LeftNormalRightVerticalIntersection(m2.Value, b2, b1);
         }
-        // L2 = vertical => L1 = horizontal
+        // L2 = vertical => L1 = normal/horizontal
         else if (L2Vertical)
         {
-            intersectionPoint = LeftNormalRightVertical(m1.Value, b1, b2);
+            intersectionPoint = LeftNormalRightVerticalIntersection(m1.Value, b1, b2);
         }
 
+        if(!intersectionPoint.HasValue)
+        {
+            throw ExceptionUtilities.CODE_BLOCK_SHOULD_NOT_BE_REACHED_EXCEPTION();
+        }
 
         return true;
 
     }
 
-    private static Vector2 LeftNormalRightVertical(float m1, float b1, float b2)
+    private static Vector2 LeftNormalRightVerticalIntersection(float m1, float b1, float b2)
     {
         float x = b2;
         float y = m1 * b2 + b1;
@@ -90,6 +97,8 @@ public static class LineUtilities
 
         float originX = origin.x;
         float innerPointX = innerPoint.x;
+
+
 
         return internal_IsInRayInterval(x, originX, innerPointX);
     }
@@ -135,6 +144,100 @@ public static class LineUtilities
         return (ray1Interval && ray2Interval);
     }
 
-    
+    public static Vector2[] GetAllIntersections(ILineRaySegmentUnion[] lines)
+    {
+        List<Vector2> intersections = new List<Vector2>();
+        
+        for (int i = 0; i < lines.Length; ++i)
+        {
+            ILineRaySegmentUnion line = lines[i];
+            for (int j = 0; j < lines.Length; ++j)
+            {
+
+                if(i == j)
+                {
+                    continue;
+                }
+
+                ILineRaySegmentUnion otherLine = lines[j];
+
+                Vector2? intersection = line.GetIntersectionWithLineAndSegmentUnion(otherLine);
+                
+                if (!intersection.HasValue)
+                {
+                    continue;
+                }
+
+                intersections.Add(intersection.Value);
+
+            }
+        }
+
+        /*
+        for(int i = 0; i < lines.Length; ++i)
+        {
+
+            if(!(lines[i] is LineSegment))
+            {
+                continue;
+            }
+
+            intersections.Add(((LineSegment)lines[i]).GetEndPoint1());
+            intersections.Add(((LineSegment)lines[i]).GetEndPoint2());
+        }
+        */
+
+        /*
+        if(lines.Length != intersections.Count)
+        {
+            for(int i = 0; i < lines.Length; ++i)
+            {
+                Debug.Log(lines[i]);
+            }
+
+            Debug.Log("====");
+
+            for(int i = 0; i < intersections.Count; ++i)
+            {
+                Debug.Log(intersections[i]);
+            }
+
+            throw new Exception("Thug style.");
+        }
+        */
+        return intersections.ToArray();
+    }
+
+    public static Vector2[] GetAllUniqueIntersections(ILineRaySegmentUnion[] lines)
+    {
+        Vector2[] intersections = GetAllIntersections(lines);
+
+        List<Vector2> uniqueIntersections = new List<Vector2>();
+        
+        for(int i = 0; i < intersections.Length; ++i)
+        {
+            Vector2 intersection = intersections[i];
+            bool alreadyContained = false;
+
+            for(int j = 0; j < uniqueIntersections.Count; ++j)
+            {
+                Vector2 addedIntersection = uniqueIntersections[j];
+
+                if(PointMath.PointEquals(intersection, addedIntersection))
+                {
+                    alreadyContained = true;
+                    break;
+                }
+            }
+
+            if(!alreadyContained)
+            {
+                uniqueIntersections.Add(intersection);
+            }
+
+        }
+
+        return uniqueIntersections.ToArray();
+    }
 
 }

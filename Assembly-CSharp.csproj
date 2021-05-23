@@ -84,6 +84,7 @@
     <Compile Include="Assets\Circle.cs" />
     <Compile Include="Assets\IGetDeepPerpendicularLine.cs" />
     <Compile Include="Assets\VoronoiSeedManager.cs" />
+    <Compile Include="Assets\ICanBeCutOffByPlaneLine.cs" />
     <Compile Include="Assets\ICutOffLine.cs" />
     <Compile Include="Assets\LineUtilities.cs" />
     <Compile Include="Assets\IHasYIntercept.cs" />
@@ -121,7 +122,7 @@
     <Compile Include="Assets\ICanIntersectLineSegment.cs" />
     <Compile Include="Assets\ICutOffLineRaySegmentUnion.cs" />
     <Compile Include="Assets\ICutOffLineSegment.cs" />
-    <Compile Include="Assets\ICanBeCutOffByPlaneLine.cs" />
+    <Compile Include="Assets\UnitTests\ConcreteTests\CutOffT.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

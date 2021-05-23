@@ -22,6 +22,42 @@ namespace ElectedByVictory.WorldCreation
             SetVoronoiSeedData(voronoiSeedData);
         }
 
+        public void RebuildVertices()
+        {
+            GameObject rMeshObject = GetMeshObject();
+            
+            Vector2[] _2Dvertices = GetVoronoiBuildData().GetVoronoiCellVertices();
+
+            if (_2Dvertices.Length < 3)
+            {
+                
+                Debug.Log("============");
+                ILineRaySegmentUnion[] edges = voronoiBuildData.GetVoronoiCellEdges();
+                Debug.Log(edges.Length);
+                for (int i = 0; i < edges.Length; ++i)
+                {
+                    Debug.Log(edges[i]);
+                }
+                Debug.Log("============");
+                
+                return;
+            }
+
+            int[] triangles = ConvexMeshCalculator.GetTrianglesForConvexVertices(_2Dvertices);
+            Vector2[] UVs = ConvexMeshCalculator.GetUVs(_2Dvertices);
+
+            Vector3[] _3DVerticesAtObjectDepth = PointUtilities.Cast2DVerticesTo3DAndSetZ(_2Dvertices, rMeshObject.transform.position.z);
+
+            _3DVerticesAtObjectDepth = rMeshObject.transform.InverseTransformPoints(_3DVerticesAtObjectDepth);
+
+            Mesh m = new Mesh();
+            m.vertices = _3DVerticesAtObjectDepth;
+            m.triangles = triangles;
+            m.uv = UVs;
+
+            rMeshObject.GetComponent<MeshFilter>().mesh = m;
+        }
+
         private void SetVoronoiBuildData(VoronoiBuildData voronoiBuildData)
         {
             this.voronoiBuildData = voronoiBuildData;
@@ -101,7 +137,7 @@ namespace ElectedByVictory.WorldCreation
             }
 
             GameObject rMeshObject = GameObject.Instantiate(GameResources.GET_INSTANCE().GetVoronoiMeshObject());
-            
+            rMeshObject.transform.position = GetVoronoiSeedData().GetPosition();
             SetMeshObject(rMeshObject);
         }
 

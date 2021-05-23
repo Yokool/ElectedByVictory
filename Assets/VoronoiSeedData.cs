@@ -8,9 +8,15 @@ namespace ElectedByVictory.WorldCreation
 
         public override string ToString()
         {
-            return $"[{nameof(VoronoiSeedData)}: x = {GetX()} _ y = {GetY()} _ circle = {GetCircle()}]";
+            return $"[{nameof(VoronoiSeedData)}: x = {GetX()} _ y = {GetY()}]";
         }
 
+        public Circle REMOVETHISMETHOD_DO_NOT_CALL_GetCircle()
+        {
+            throw new Exception("DO NOT CALL");
+        }
+
+        /*
         public override bool Equals(object obj)
         {
             if(!(obj is VoronoiSeedData))
@@ -22,28 +28,22 @@ namespace ElectedByVictory.WorldCreation
 
             bool xEquals = MathEBV.FloatEquals(GetX(), objSeed.GetX());
             bool yEquals = MathEBV.FloatEquals(GetY(), objSeed.GetY());
-            bool circleEquals = GetCircle().Equals(objSeed.GetCircle());
-
-            return xEquals && yEquals && circleEquals;
+            
+            return (xEquals && yEquals);
 
         }
 
         public override int GetHashCode()
         {
-            int result = 0;
+            int hash = 65;
+            hash = (4 * hash) + GetX().GetHashCode();
+            hash = (4 * hash) + GetY().GetHashCode();
 
-            int x = BitConverter.ToInt32(BitConverter.GetBytes(GetX()), 0);
-            int y = BitConverter.ToInt32(BitConverter.GetBytes(GetX()), 0);
-
-            int circleHashCode = GetCircle().GetHashCode();
-
-            result = result * 31 + x;
-            result = result * 31 + y;
-            result = result * 31 + circleHashCode;
-
-            return result;
+            return hash;
 
         }
+        */
+
 
         /// <summary>
         /// The x world position of the seed.
@@ -56,21 +56,15 @@ namespace ElectedByVictory.WorldCreation
 
         private Circle circleEquation;
 
-        public VoronoiSeedData(float x, float y, float circleRadius) : this()
+        public VoronoiSeedData(float x, float y) : this()
         {
             SetX(x);
             SetY(y);
-            SetCircleEquation(circleRadius);
         }
 
-        public void SetCircleEquation(float circleRadius)
+        public VoronoiSeedData(Vector2 seedCenter) : this(seedCenter.x, seedCenter.y)
         {
-            this.circleEquation = new Circle(GetX(), GetY(), circleRadius);
-        }
 
-        public Circle GetCircle()
-        {
-            return this.circleEquation;
         }
 
         public void SetX(float x)

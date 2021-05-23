@@ -57,17 +57,27 @@ namespace ElectedByVictory.WorldCreation
                 return new int[0];
             }
 
-            int trianglesAmount = ((vertices.Length - 2) * 3);
-            int[] triangles = new int[trianglesAmount];
+            int triangleCount = (vertices.Length - 2);
+            int triangleEdgeCount = (triangleCount * 3);
 
-            for(int i = 1; i < (vertices.Length - 1); ++i)
+            int[] triangleEdges = new int[triangleEdgeCount];
+
+            int triangleIndex = 0;
+
+            for(int i = 1; i < (vertices.Length - 1); i++)
             {
-                triangles[i] = 0;
-                triangles[i + 1] = i;
-                triangles[i + 2] = (i + 1);
+                triangleEdges[triangleIndex] = 0;
+                ++triangleIndex;
+
+                triangleEdges[triangleIndex] = i;
+                ++triangleIndex;
+
+                triangleEdges[triangleIndex] = (i + 1);
+                ++triangleIndex;
+
             }
 
-            return triangles;
+            return triangleEdges;
         }
 
     }

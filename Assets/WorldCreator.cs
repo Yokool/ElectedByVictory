@@ -8,6 +8,9 @@ namespace ElectedByVictory.WorldCreation
 {
     public class WorldCreator : MonoBehaviour
     {
+
+        private const int MAX_FAILURE_COUNT = 10;
+
         [SerializeField]
         private GameObject pSeedPrefab;
 
@@ -98,6 +101,18 @@ namespace ElectedByVictory.WorldCreation
         {
             RebuildVoronoiObjects();
             RebuildVoronoiInsideData();
+            RebuildVoronoiObjectVertices();
+        }
+
+        private void RebuildVoronoiObjectVertices()
+        {
+            List<VoronoiSeedManager> worldSeeds = GetActiveSeeds();
+
+            for(int i = 0; i < worldSeeds.Count; ++i)
+            {
+                VoronoiSeedManager worldSeed = worldSeeds[i];
+                worldSeed.RebuildVertices();
+            }
         }
 
         private void RebuildVoronoiInsideData()
@@ -195,26 +210,87 @@ namespace ElectedByVictory.WorldCreation
 
         private VoronoiSeedData[] GenerateRandomSeedData()
         {
-            VoronoiSeedData[] seeds = new VoronoiSeedData[numberOfProvinces];
+            int numberOfProvinces = GetNumberOfProvinces();
+            Vector2[] seedCenters = new Vector2[numberOfProvinces];
 
-            float halfWorldWidth = GetHalfWorldWidth();
-            float halfWorldHeight = GetHalfWorldHeight();
 
-            Vector3 worldCenter = GetWorldCenter();
-            halfWorldWidth += worldCenter.x;
-            halfWorldHeight += worldCenter.y;
-
-            for (int i = 0; i < seeds.Length; ++i)
+            for (int i = 0; i < numberOfProvinces; ++i)
             {
-                float x = Random.Range(-halfWorldWidth, halfWorldWidth);
-                float y = Random.Range(-halfWorldHeight, halfWorldHeight);
-
-                seeds[i] = new VoronoiSeedData(x, y, seedRadius);
+                
+                for(int failureCount = 0; failureCount < MAX_FAILURE_COUNT; ++failureCount)
+                {
+                    Vector2 randomSeedCenter = GenerateRandomPoint();
+                    if(!PointUtilities.ArrayContainsPoint(seedCenters, randomSeedCenter))
+                    {
+                        seedCenters[i] = randomSeedCenter;
+                        break;
+                    }
+                }
             }
+
+            Vector2[] nonNullSeedCenters = seedCenters.Where( (seed) => { return (seed != null); } ).ToArray();
+
+            VoronoiSeedData[] seeds = new VoronoiSeedData[nonNullSeedCenters.Length];
+
+            for(int i = 0; i < nonNullSeedCenters.Length; ++i)
+            {
+                Vector2 seedCenter = nonNullSeedCenters[i];
+                seeds[i] = new VoronoiSeedData(seedCenter);
+            }
+
             return seeds;
         }
-
         
+        public (float, float) GetMinMaxX()
+        {
+            float halfWorldWidth = GetHalfWorldWidth();
+            Vector3 worldCenter = GetWorldCenter();
+            return GetMinMaxInternal(halfWorldWidth, worldCenter.x);
+        }
+
+        public (float, float) GetMinMaxY()
+        {
+            float halfWorldHeight = GetHalfWorldHeight();
+            Vector3 worldCenter = GetWorldCenter();
+            return GetMinMaxInternal(halfWorldHeight, worldCenter.y);
+        }
+
+        private (float, float) GetMinMaxInternal(float halfWidthHeight, float xY)
+        {
+            float min = xY - halfWidthHeight;
+            float max = xY + halfWidthHeight;
+            return (min, max);
+        }
+
+        public Vector2 GenerateRandomPoint()
+        {
+            float x = GenerateWorldPointX();
+            float y = GenerateWorldPointY();
+
+            Vector2 generatedPoint = new Vector2(x, y);
+
+            return generatedPoint;
+        }
+
+        public float GenerateWorldPointX()
+        {
+            (float, float) xMinMax = GetMinMaxX();
+            float minX = xMinMax.Item1;
+            float maxX = xMinMax.Item2;
+
+            return Random.Range(minX, maxX);
+        }
+
+        public float GenerateWorldPointY()
+        {
+            float halfWorldHeight = GetMinMaxX().Item2;
+            return Random.Range(-halfWorldHeight, halfWorldHeight);
+        }
+
+        public int GetNumberOfProvinces()
+        {
+            return this.numberOfProvinces;
+        }
 
         public Vector2 GetWorldCenter()
         {
